@@ -7,7 +7,12 @@ import { getItems } from '@/lib/api'
 import { toast } from 'sonner'
 
 // Available sort options
-const sortOptions = [
+type SortOption = { value: string; label: string }
+const sortOptions: SortOption[] = [
+  { value: 'id-asc', label: 'ID (Ascending)' },
+  { value: 'id-desc', label: 'ID (Descending)' },
+  { value: 'name-asc', label: 'Name (A-Z)' },
+  { value: 'name-desc', label: 'Name (Z-A)' },
 ]
 
 export function SortingOptions() {
