@@ -5,6 +5,7 @@ export type TelegramUser = {
   username?: string;
   language_code?: string;
   is_premium?: boolean;
+  photo_url?: string;
 };
 
 export type TelegramWebApp = {
