@@ -124,7 +124,7 @@ export async function getItems(
         // For each trait and its values, we need a more flexible JSON search
         // We'll use a combination of conditions to match the trait_type and value
         const traitConditions = [];
-        const valueConditions = [];
+        const valueConditions: string[] = [];
 
         // For each value, create a condition that checks if the JSON contains it
         values.forEach(value => {
@@ -156,7 +156,7 @@ export async function getItems(
     for (const [trait, values] of Object.entries(attributes)) {
       if (Array.isArray(values) && values.length > 0) {
         const traitConditions = [];
-        const valueConditions = [];
+        const valueConditions: string[] = [];
 
         values.forEach(value => {
           valueConditions.push(`JSON_SEARCH(attributes, 'one', ?) IS NOT NULL`);
