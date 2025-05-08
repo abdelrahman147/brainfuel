@@ -11,12 +11,12 @@ const Dialog = DialogPrimitive.Root
 const DialogPortal = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Portal>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Portal
-    ref={ref}
-    className={cn("fixed inset-0 z-50 flex justify-center items-center", className)}
-    {...props}
-  />
+>((props, ref) => (
+  <DialogPrimitive.Portal ref={ref} {...props}>
+    <div className="fixed inset-0 z-50 flex justify-center items-center">
+      {props.children}
+    </div>
+  </DialogPrimitive.Portal>
 ))
 DialogPortal.displayName = DialogPrimitive.Portal.displayName
 
