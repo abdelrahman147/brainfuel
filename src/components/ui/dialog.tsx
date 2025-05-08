@@ -8,16 +8,13 @@ import { cn } from "@/lib/utils"
 
 const Dialog = DialogPrimitive.Root
 
-const DialogPortal = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Portal>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>
->((props, ref) => (
-  <DialogPrimitive.Portal ref={ref} {...props}>
+const DialogPortal = (props: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Portal>) => (
+  <DialogPrimitive.Portal {...props}>
     <div className="fixed inset-0 z-50 flex justify-center items-center">
       {props.children}
     </div>
   </DialogPrimitive.Portal>
-))
+)
 DialogPortal.displayName = DialogPrimitive.Portal.displayName
 
 const DialogTrigger = DialogPrimitive.Trigger
