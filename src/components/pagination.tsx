@@ -65,8 +65,9 @@ export function Pagination() {
 
   const handleNextPage = async () => {
     if (
+      !state.collectionData ||
       state.currentPage >= state.collectionData.totalPages ||
-      !state.collectionData?.giftName ||
+      !state.collectionData.giftName ||
       isLoading
     ) {
       return
