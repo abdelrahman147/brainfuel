@@ -1,5 +1,5 @@
-import type { AttributeWithPercentage, DbResult, GiftInfo } from './db';
-import type { Filters } from './state';
+import type { AttributeWithPercentage, DbResult, GiftInfo, Item } from './db';
+import type { Filters, GiftCollectionData } from './state';
 
 const API_BASE_URL = '/api';
 
@@ -80,7 +80,7 @@ export async function getCollectionData(
   includeAttributes = true,
   options?: { signal?: AbortSignal }
 ): Promise<{
-  collectionData: DbResult;
+  collectionData: GiftCollectionData;
   attributes: AttributeWithPercentage;
   stats: { totalItems: number };
 }> {
@@ -116,7 +116,6 @@ export async function getCollectionData(
       items: data.collectionData.items,
       totalItems: data.collectionData.totalItems,
       totalPages: data.collectionData.totalPages,
-      page: data.collectionData.page
     },
     attributes: data.attributes,
     stats: data.stats
