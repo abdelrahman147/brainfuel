@@ -2,17 +2,14 @@ import fs from 'fs-extra';
 import path from 'path';
 import mysql from 'mysql2/promise';
 
-// MySQL connection config
-const dbConfig = {
-  host: process.env.MYSQL_HOST,
-  port: Number.parseInt(process.env.MYSQL_PORT || '3306'),
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  // Add connection pool settings
+// Gifts/Collections DB connection config (old DB)
+const giftsDbConfig = {
+  host: process.env.MYSQL_GIFTS_HOST,
+  port: Number.parseInt(process.env.MYSQL_GIFTS_PORT || '3306'),
+  user: process.env.MYSQL_GIFTS_USER,
+  password: process.env.MYSQL_GIFTS_PASSWORD,
+  database: process.env.MYSQL_GIFTS_DATABASE,
+  ssl: { rejectUnauthorized: false },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -20,18 +17,39 @@ const dbConfig = {
   keepAliveInitialDelay: 30000
 };
 
-// Create a connection pool (singleton)
-let pool: mysql.Pool | null = null;
+// Referrals DB connection config (new DB)
+const refDbConfig = {
+  host: process.env.MYSQL_REF_HOST,
+  port: Number.parseInt(process.env.MYSQL_REF_PORT || '3306'),
+  user: process.env.MYSQL_REF_USER,
+  password: process.env.MYSQL_REF_PASSWORD,
+  database: process.env.MYSQL_REF_DATABASE,
+  ssl: { rejectUnauthorized: false },
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 30000
+};
 
-/**
- * Get the MySQL connection pool (created only once)
- */
-export function getConnectionPool(): mysql.Pool {
-  if (!pool) {
-    console.log(`Creating MySQL connection pool at ${dbConfig.host}:${dbConfig.port}`);
-    pool = mysql.createPool(dbConfig);
+// Create pools (singletons)
+let giftsPool: mysql.Pool | null = null;
+let refPool: mysql.Pool | null = null;
+
+export function getGiftsPool(): mysql.Pool {
+  if (!giftsPool) {
+    console.log(`Creating Gifts MySQL pool at ${giftsDbConfig.host}:${giftsDbConfig.port}`);
+    giftsPool = mysql.createPool(giftsDbConfig);
   }
-  return pool;
+  return giftsPool;
+}
+
+export function getRefPool(): mysql.Pool {
+  if (!refPool) {
+    console.log(`Creating Referrals MySQL pool at ${refDbConfig.host}:${refDbConfig.port}`);
+    refPool = mysql.createPool(refDbConfig);
+  }
+  return refPool;
 }
 
 export type Item = {
@@ -72,8 +90,8 @@ export type AttributeWithPercentage = {
  */
 export async function connectDB(): Promise<mysql.Connection> {
   try {
-    console.log(`Connecting to MySQL database at ${dbConfig.host}:${dbConfig.port}`);
-    const connection = await mysql.createConnection(dbConfig);
+    console.log(`Connecting to MySQL database at ${giftsDbConfig.host}:${giftsDbConfig.port}`);
+    const connection = await mysql.createConnection(giftsDbConfig);
     return connection;
   } catch (error) {
     console.error('Failed to connect to MySQL database:', error);
@@ -107,7 +125,7 @@ export async function getItems(
   sort = 'id-asc',
   attributes: Record<string, string[]> = {}
 ): Promise<DbResult> {
-  const pool = getConnectionPool();
+  const pool = getGiftsPool();
 
   // Convert limit and page to numbers to ensure they're treated correctly
   const limitNum = Number(limit);
@@ -193,7 +211,7 @@ export async function getAttributes(giftName: string): Promise<AttributeWithPerc
     return cached.data;
   }
 
-  const pool = getConnectionPool();
+  const pool = getGiftsPool();
   const tableName = getCollectionTableName(giftName);
 
   const [rows] = await pool.execute(
@@ -268,7 +286,7 @@ export async function getStats(giftName: string): Promise<{ totalItems: number }
     return { totalItems: cached.totalItems };
   }
 
-  const pool = getConnectionPool();
+  const pool = getGiftsPool();
   const tableName = getCollectionTableName(giftName);
 
   const [rows] = await pool.execute(
@@ -296,12 +314,12 @@ export async function listExports(): Promise<{ db: GiftInfo[] }> {
     return { db: cache.collections.data };
   }
 
-  const pool = getConnectionPool();
+  const pool = getGiftsPool();
 
   try {
     const [tables] = await pool.execute(
       "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name LIKE '%s'",
-      [process.env.MYSQL_DATABASE]
+      [giftsDbConfig.database]
     );
     console.log('Found tables:', tables);
 
@@ -334,7 +352,7 @@ export async function listExports(): Promise<{ db: GiftInfo[] }> {
  * Check if a gift collection exists
  */
 export async function checkFile(giftName: string): Promise<{ db: boolean }> {
-  const pool = getConnectionPool();
+  const pool = getGiftsPool();
   const tableName = getCollectionTableName(giftName);
 
   const [rows] = await pool.execute(
@@ -354,4 +372,22 @@ function getCollectionTableName(collectionName: string): string {
     cleanName += 's';
   }
   return cleanName;
+}
+
+// Referral system DB logic
+export async function addReferral(referrerId: number, invitedId: number, invitedName: string, invitedPhoto: string): Promise<void> {
+  const pool = getRefPool();
+  await pool.execute(
+    'INSERT IGNORE INTO referrals (referrer_id, invited_id, invited_name, invited_photo) VALUES (?, ?, ?, ?)',
+    [referrerId, invitedId, invitedName, invitedPhoto]
+  );
+}
+
+export async function getInvitedUsers(referrerId: number): Promise<{ invited_id: number, invited_name: string, invited_photo: string, created_at: string }[]> {
+  const pool = getRefPool();
+  const [rows] = await pool.execute(
+    'SELECT invited_id, invited_name, invited_photo, created_at FROM referrals WHERE referrer_id = ? ORDER BY created_at DESC',
+    [referrerId]
+  );
+  return rows as any[];
 }
