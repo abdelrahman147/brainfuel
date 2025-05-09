@@ -1,13 +1,13 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { getAttributes } from '@/lib/db';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function GET(
   request: NextRequest,
-  { params }: { params: { giftName: string } }
+  { params }: any
 ) {
   try {
-    // Using await to ensure params is properly awaited
-    const { giftName } = await Promise.resolve(params);
+    const { giftName } = params;
     const result = await getAttributes(giftName);
     return NextResponse.json(result);
   } catch (error) {
