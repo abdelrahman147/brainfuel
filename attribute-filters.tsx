@@ -8,41 +8,6 @@ import { toast } from 'sonner'
 
 const encode = encodeURIComponent
 
-// Format gift name: trim, lowercase, remove spaces
-const formatGiftName = (name: string): string => {
-  return name.trim().toLowerCase().replace(/\s+/g, '')
-}
-
-// Get preview URL for Model, Symbol, Backdrop
-const getPreviewUrl = (trait: string, value: string, state: any) => {
-  if (!state.collectionData?.giftName) return ''
-  const collection = formatGiftName(state.collectionData.giftName)
-  const encodedValue = encode(value)
-  if (trait.toLowerCase() === 'model') {
-    return `https://nft.fragment.com/gift/${collection}-${encodedValue}.webp`
-  }
-  if (trait.toLowerCase() === 'symbol') {
-    return `https://nft.fragment.com/gift/${collection}-${encodedValue}.webp`
-  }
-  if (trait.toLowerCase() === 'backdrop') {
-    return `https://nft.fragment.com/gift/${collection}-${encodedValue}.webp`
-  }
-  return ''
-}
-
-// Handle image error: fallback to .jpg, then .png
-const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, trait: string, value: string, state: any) => {
-  const target = e.target as HTMLImageElement
-  if (!state.collectionData?.giftName) return
-  const collection = formatGiftName(state.collectionData.giftName)
-  const encodedValue = encode(value)
-  if (target.src.endsWith('.webp')) {
-    target.src = `https://nft.fragment.com/gift/${collection}-${encodedValue}.jpg`
-  } else if (target.src.endsWith('.jpg')) {
-    target.src = `https://nft.fragment.com/gift/${collection}-${encodedValue}.png`
-  }
-}
-
 export function AttributeFilters() {
   const { state, dispatch } = useAppState()
   const [isLoading, setIsLoading] = useState(false)
@@ -90,6 +55,60 @@ export function AttributeFilters() {
     }
   }
 
+  // Helper function to format gift name
+  const formatGiftName = (name: string): string => {
+    return name.trim().toLowerCase().replace(/\s+/g, '')
+  }
+
+  const getPreviewUrl = (trait: string, value: string) => {
+    if (!state.collectionData?.giftName) return ''
+    
+    const collection = formatGiftName(state.collectionData.giftName)
+    const encodedValue = encode(value)
+
+    // Extract ID from the value if it exists
+    const extractId = (val: string): string => {
+      const parts = val.split('#')
+      return parts.length > 1 ? parts[1].trim() : '1' // Default to 1 if no ID found
+    }
+
+    const itemId = extractId(value)
+
+    // Use the same URL pattern as ItemCard with collection name and ID
+    if (trait.toLowerCase() === 'model') {
+      return `https://nft.fragment.com/gift/${collection}-${itemId}.webp`
+    }
+    if (trait.toLowerCase() === 'symbol') {
+      return `https://nft.fragment.com/gift/${collection}-${itemId}.webp`
+    }
+    if (trait.toLowerCase() === 'backdrop') {
+      return `https://nft.fragment.com/gift/${collection}-${itemId}.webp`
+    }
+    return ''
+  }
+
+  // Add error handling for images
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, trait: string, value: string) => {
+    const target = e.target as HTMLImageElement
+    if (!state.collectionData?.giftName) return
+
+    const collection = formatGiftName(state.collectionData.giftName)
+    
+    // Extract ID from the value if it exists
+    const extractId = (val: string): string => {
+      const parts = val.split('#')
+      return parts.length > 1 ? parts[1].trim() : '1' // Default to 1 if no ID found
+    }
+
+    const itemId = extractId(value)
+
+    if (target.src.endsWith('.webp')) {
+      target.src = `https://nft.fragment.com/gift/${collection}-${itemId}.jpg`
+    } else if (target.src.endsWith('.jpg')) {
+      target.src = `https://nft.fragment.com/gift/${collection}-${itemId}.png`
+    }
+  }
+
   const applyGiftId = async () => {
     if (!giftId.trim()) return
     if (!state.collectionData?.giftName) return
@@ -121,7 +140,12 @@ export function AttributeFilters() {
               {traitOptions('Model').map((opt) => (
                 <SelectItem key={opt} value={opt}>
                   <div className="flex items-center gap-2">
-                    <img src={getPreviewUrl('Model', opt, state)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Model', opt, state)} />
+                    <img 
+                      src={getPreviewUrl('Model', opt)} 
+                      alt={opt} 
+                      className="w-5 h-5 object-contain" 
+                      onError={(e) => handleImageError(e, 'Model', opt)}
+                    />
                     {opt}
                   </div>
                 </SelectItem>
@@ -146,7 +170,12 @@ export function AttributeFilters() {
               {traitOptions('Backdrop').map((opt) => (
                 <SelectItem key={opt} value={opt}>
                   <div className="flex items-center gap-2">
-                    <img src={getPreviewUrl('Backdrop', opt, state)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Backdrop', opt, state)} />
+                    <img 
+                      src={getPreviewUrl('Backdrop', opt)} 
+                      alt={opt} 
+                      className="w-5 h-5 object-contain"
+                      onError={(e) => handleImageError(e, 'Backdrop', opt)}
+                    />
                     {opt}
                   </div>
                 </SelectItem>
@@ -171,7 +200,12 @@ export function AttributeFilters() {
               {traitOptions('Symbol').map((opt) => (
                 <SelectItem key={opt} value={opt}>
                   <div className="flex items-center gap-2">
-                    <img src={getPreviewUrl('Symbol', opt, state)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Symbol', opt, state)} />
+                    <img 
+                      src={getPreviewUrl('Symbol', opt)} 
+                      alt={opt} 
+                      className="w-5 h-5 object-contain"
+                      onError={(e) => handleImageError(e, 'Symbol', opt)}
+                    />
                     {opt}
                   </div>
                 </SelectItem>

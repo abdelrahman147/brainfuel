@@ -8,12 +8,7 @@ import Image from 'next/image'
 import { getCollectionData } from '@/lib/api'
 import { toast } from 'sonner'
 
-interface HeaderProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-}
-
-export function Header({ activeTab, onTabChange }: HeaderProps) {
+export function Header() {
   const { state } = useAppState()
   const tg = getTelegramWebApp()
 
@@ -89,42 +84,7 @@ export function Header({ activeTab, onTabChange }: HeaderProps) {
           </button>
         </div>
       </div>
-
-      {/* Navigation Bar */}
-      <nav className="flex justify-center mt-4 space-x-4">
-        <button
-          className={`px-4 py-2 rounded-lg transition-all duration-300 ${
-            activeTab === 'catalog' ? 'bg-purple-500 text-white' : 'bg-muted/20 text-muted-foreground hover:bg-muted/30'
-          }`}
-          onClick={() => onTabChange('catalog')}
-        >
-          Catalog
-        </button>
-        <button
-          className={`px-4 py-2 rounded-lg transition-all duration-300 ${
-            activeTab === 'donate' ? 'bg-purple-500 text-white' : 'bg-muted/20 text-muted-foreground hover:bg-muted/30'
-          }`}
-          onClick={() => onTabChange('donate')}
-        >
-          Donate
-        </button>
-        <button
-          className={`px-4 py-2 rounded-lg transition-all duration-300 ${
-            activeTab === 'invite' ? 'bg-purple-500 text-white' : 'bg-muted/20 text-muted-foreground hover:bg-muted/30'
-          }`}
-          onClick={() => onTabChange('invite')}
-        >
-          Invite
-        </button>
-        <button
-          className={`px-4 py-2 rounded-lg transition-all duration-300 ${
-            activeTab === 'coming-soon' ? 'bg-purple-500 text-white' : 'bg-muted/20 text-muted-foreground hover:bg-muted/30'
-          }`}
-          onClick={() => onTabChange('coming-soon')}
-        >
-          Coming Soon
-        </button>
-      </nav>
+      {/* Navigation bar removed: handled in page.tsx as a bottom bar */}
     </header>
   )
 }

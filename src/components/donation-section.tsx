@@ -1,113 +1,115 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { useAppState } from '@/lib/state'
+import { useState } from 'react'
 import { getTelegramWebApp } from '@/lib/telegram'
-import { getWallet } from '@/lib/api'
-import { toast } from 'sonner'
-import duckAnimation from '../../donation page duck.json'
 import { LottiePlayer } from './LottiePlayer'
+import duckAnimation from '../../donation page duck.json'
+
+const TON_WALLET = 'UQCFRqB2vZnGZRh3ZoZAI tNidk8zpkN...'; // Replace with your actual wallet address
 
 export function DonationSection() {
-  const { state } = useAppState()
+  const [copied, setCopied] = useState(false)
   const tg = getTelegramWebApp()
-  const user = tg?.initDataUnsafe?.user
-  const [donationAmount, setDonationAmount] = useState('10')
-  const [isProcessing, setIsProcessing] = useState(false)
 
-  const handleDonate = async () => {
-    if (typeof window === 'undefined') return
-    setIsProcessing(true)
+  const handleCopy = async () => {
     try {
-      if (tg && typeof (window as any).Telegram?.WebApp?.openInvoice === 'function') {
-        await (window as any).Telegram.WebApp.openInvoice({
-          title: 'Donation to GiftCatalog',
-          description: 'Support our development',
-          payload: JSON.stringify({
-            userId: user?.id,
-            amount: parseFloat(donationAmount)
-          }),
-          provider_token: process.env.NEXT_PUBLIC_PAYMENT_TOKEN,
-          currency: 'USD',
-          prices: [{
-            label: 'Donation',
-            amount: Math.round(parseFloat(donationAmount) * 100)
-          }]
-        })
-      }
-    } catch (error) {
-      console.error('Payment error:', error)
+      await navigator.clipboard.writeText(TON_WALLET)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
       if (tg && typeof (window as any).Telegram?.WebApp?.showPopup === 'function') {
-        (window as any).Telegram.WebApp.showPopup({ message: 'Payment failed. Please try again.' })
+        (window as any).Telegram.WebApp.showPopup({ message: 'Wallet address copied!' })
       }
-    } finally {
-      setIsProcessing(false)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  const handleChannel = () => {
+    const url = 'https://t.me/GiftCatlog'
+    if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
+      (window as any).Telegram.WebApp.openLink(url)
+    } else {
+      window.open(url, '_blank')
+    }
+  }
+
+  const handleContact = () => {
+    const url = 'https://t.me/yousefmsm1'
+    if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
+      (window as any).Telegram.WebApp.openLink(url)
+    } else {
+      window.open(url, '_blank')
     }
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Donation Card */}
-      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 backdrop-filter backdrop-blur-lg bg-opacity-90 dark:bg-opacity-60 animate-scale-in">
-        <div className="flex flex-col items-center">
-          <div className="w-24 h-24 mb-6 relative flex items-center justify-center">
-            <LottiePlayer
-              animationData={duckAnimation}
-              style={{ width: '100%', height: '100%' }}
-              loop
-              autoplay
-              rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
-            />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
-            <svg className="w-6 h-6 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-            </svg>
-            Support Us
-          </h2>
-          <p className="text-muted-foreground text-center max-w-lg mb-6">
-            Your support helps us maintain and improve the Gift Catalog platform. Every contribution makes a difference!
-          </p>
-          <div className="w-full max-w-xs space-y-4">
-            <div className="flex items-center space-x-2">
-              <input
-                type="number"
-                value={donationAmount}
-                onChange={(e) => setDonationAmount(e.target.value)}
-                className="flex-1 px-4 py-2 rounded-lg border border-border dark:border-border/30 bg-background/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                min="1"
-                step="1"
-              />
-              <span className="text-foreground font-medium">USD</span>
-            </div>
-            <button
-              onClick={handleDonate}
-              disabled={isProcessing}
-              className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
-                  </svg>
-                  <span>Donate Now</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in space-y-6">
+      <div className="w-32 h-32 mb-2">
+        <LottiePlayer
+          animationData={duckAnimation}
+          style={{ width: '100%', height: '100%' }}
+          loop
+          autoplay
+          rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
+        />
       </div>
+      <div className="bg-white dark:bg-card border border-border rounded-xl shadow-md p-6 w-full max-w-md flex flex-col items-center">
+        <div className="flex items-center mb-2">
+          <span className="mr-2 text-xl animate-pump-heart" style={{ display: 'inline-block' }}>
+            <svg className="w-7 h-7 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+          </span>
+          <span className="font-bold text-lg">Support the Project</span>
+        </div>
+        <p className="text-muted-foreground text-center mb-4">
+          Your donations help keep this project running! Send TON to the wallet address below.
+        </p>
+        <div className="flex w-full items-center bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2 mb-2">
+          <input
+            type="text"
+            value={TON_WALLET}
+            readOnly
+            className="flex-1 bg-transparent text-sm text-foreground border-none outline-none select-all"
+          />
+          <button
+            onClick={handleCopy}
+            className="ml-2 px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+          >
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground text-center">Please verify the wallet address before sending any funds.</p>
+      </div>
+      <div className="w-full max-w-md flex flex-col gap-3 mt-2 bg-white dark:bg-card border border-border rounded-xl shadow-md p-4">
+        <button
+          onClick={handleChannel}
+          className="w-full flex items-center justify-center bg-accent text-accent-foreground hover:bg-accent/80 transition-colors rounded-lg py-3 text-sm font-medium"
+        >
+          <span className="mr-2">🔗</span> Follow the Channel
+        </button>
+        <button
+          onClick={handleContact}
+          className="w-full flex items-center justify-center bg-muted/20 dark:bg-muted/10 text-foreground dark:text-foreground hover:bg-muted/30 dark:hover:bg-muted/20 transition-colors rounded-lg py-3 text-sm font-medium"
+        >
+          <span className="mr-2">💬</span> Contact Developer
+        </button>
+      </div>
+      <style jsx global>{`
+        @keyframes pump-heart {
+          0%, 100% { transform: scale(1); }
+          10% { transform: scale(1.15); }
+          20% { transform: scale(0.95); }
+          30% { transform: scale(1.1); }
+          50% { transform: scale(0.97); }
+          60% { transform: scale(1.05); }
+          70% { transform: scale(0.98); }
+          80% { transform: scale(1.02); }
+        }
+        .animate-pump-heart {
+          animation: pump-heart 1.2s infinite;
+        }
+      `}</style>
     </div>
   )
 }
