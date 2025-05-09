@@ -3,8 +3,8 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { AppProvider } from "@/components/app-provider";
 import { ClientBody } from "./ClientBody";
-import { DarkModeProvider } from "@/components/dark-mode-provider";
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { ClientStyleEffects } from '@/components/ClientStyleEffects';
 
 export const metadata: Metadata = {
   title: "Gifts Catalog",
@@ -24,10 +24,9 @@ export default function RootLayout({
       <body className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 font-sans text-sm">
         <LoadingScreen>
           <AppProvider>
-            <DarkModeProvider>
-              <ClientBody>{children}</ClientBody>
-              <Toaster position="top-right" />
-            </DarkModeProvider>
+            <ClientStyleEffects />
+            <ClientBody>{children}</ClientBody>
+            <Toaster position="top-right" />
           </AppProvider>
         </LoadingScreen>
       </body>
