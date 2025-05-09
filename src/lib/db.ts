@@ -339,8 +339,8 @@ export async function checkFile(giftName: string): Promise<{ db: boolean }> {
 function getCollectionTableName(collectionName: string): string {
   // Remove numbers and special characters
   let cleanName = collectionName.replace(/[#\d]/g, '');
-  // Convert camelCase to lowercase
-  cleanName = cleanName.replace(/([A-Z])/g, '$1').toLowerCase();
+  // Convert camelCase to lowercase and remove spaces
+  cleanName = cleanName.replace(/([A-Z])/g, '$1').toLowerCase().replace(/\s+/g, '');
   // Add 's' for plural if not already plural
   if (!cleanName.endsWith('s')) {
     cleanName += 's';
