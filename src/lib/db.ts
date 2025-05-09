@@ -113,33 +113,28 @@ export async function getItems(
   const limitNum = Number(limit);
   const pageNum = Number(page);
 
-  // Build the base query - updated to remove unavailable fields
-  let baseQuery = 'SELECT id, name, image, attributes, lottie FROM items WHERE name LIKE ?';
-  const params: any[] = [`${giftName}%`]; // Match names that start with the giftName
+  // Build the base query for the new structure
+  let baseQuery = `SELECT id, base_name, attributes FROM \`${giftName}\``;
+  const whereClauses: string[] = [];
+  const params: any[] = [];
 
   // Apply attribute filters
   if (Object.keys(attributes).length > 0) {
     for (const [trait, values] of Object.entries(attributes)) {
       if (Array.isArray(values) && values.length > 0) {
-        // For each trait and its values, we need a more flexible JSON search
-        // We'll use a combination of conditions to match the trait_type and value
-        const traitConditions = [];
-        const valueConditions: string[] = [];
-
-        // For each value, create a condition that checks if the JSON contains it
-        values.forEach(value => {
-          valueConditions.push(`JSON_SEARCH(attributes, 'one', ?) IS NOT NULL`);
+        for (const value of values) {
+          whereClauses.push(`JSON_SEARCH(attributes, 'one', ?) IS NOT NULL`);
           params.push(value);
-        });
-
-        // Add condition for the trait
-        traitConditions.push(`JSON_SEARCH(attributes, 'one', ?) IS NOT NULL`);
-        params.push(trait);
-
-        // Add the combined condition to the query
-        baseQuery += ` AND (${traitConditions.join(' OR ')}) AND (${valueConditions.join(' OR ')})`;
+        }
+        // Optionally, filter by trait_type as well
+        // whereClauses.push(`JSON_SEARCH(attributes, 'one', ?) IS NOT NULL`);
+        // params.push(trait);
       }
     }
+  }
+
+  if (whereClauses.length > 0) {
+    baseQuery += ' WHERE ' + whereClauses.join(' AND ');
   }
 
   // Apply sorting
@@ -147,48 +142,32 @@ export async function getItems(
   const sortField = field === 'id' ? 'id' : field;
   baseQuery += ` ORDER BY ${sortField} ${direction.toUpperCase()}`;
 
-  // Count total items for pagination using the base query without LIMIT
-  // We must replicate the attribute filters for count query as well
-  let countQuery = 'SELECT COUNT(*) as total FROM items WHERE name LIKE ?';
-  const countParams: any[] = [`${giftName}%`];
-
-  if (Object.keys(attributes).length > 0) {
-    for (const [trait, values] of Object.entries(attributes)) {
-      if (Array.isArray(values) && values.length > 0) {
-        const traitConditions = [];
-        const valueConditions: string[] = [];
-
-        values.forEach(value => {
-          valueConditions.push(`JSON_SEARCH(attributes, 'one', ?) IS NOT NULL`);
-          countParams.push(value);
-        });
-
-        traitConditions.push(`JSON_SEARCH(attributes, 'one', ?) IS NOT NULL`);
-        countParams.push(trait);
-
-        countQuery += ` AND (${traitConditions.join(' OR ')}) AND (${valueConditions.join(' OR ')})`;
-      }
-    }
+  // Count total items for pagination
+  let countQuery = `SELECT COUNT(*) as total FROM \`${giftName}\``;
+  if (whereClauses.length > 0) {
+    countQuery += ' WHERE ' + whereClauses.join(' AND ');
   }
-
-  const [countRows] = await pool.execute(countQuery, countParams);
+  const [countRows] = await pool.execute(countQuery, params);
   const totalItems = (countRows as any)[0].total;
   const totalPages = Math.ceil(totalItems / limitNum);
 
-  // Apply pagination by adding LIMIT directly to the query string
-  // This avoids issues with the prepared statement placeholders for numeric values
+  // Apply pagination
   const offset = (pageNum - 1) * limitNum;
   const query = `${baseQuery} LIMIT ${limitNum} OFFSET ${offset}`;
 
   // Execute the query
   const [rows] = await pool.execute(query, params);
 
-  // Parse attributes JSON and add empty description and missing fields
+  // Parse attributes JSON and return the new structure
   const parsedItems = (rows as any[]).map(item => ({
-    ...item,
-    description: '', // Add empty description since it's expected by the UI
-    isOnTelegram: false, // Default value for missing field
-    isOnBlockchain: false, // Default value for missing field
+    id: item.id,
+    base_name: item.base_name,
+    name: `${item.base_name} #${item.id}`,
+    description: '',
+    image: '',
+    lottie: '',
+    isOnTelegram: false,
+    isOnBlockchain: false,
     attributes: typeof item.attributes === 'string'
       ? JSON.parse(item.attributes || '[]')
       : item.attributes

@@ -57,9 +57,7 @@ export function ItemCard({ item }: ItemCardProps) {
 
   // Helper function to format gift name for URL
   const formatGiftName = (name: string): string => {
-    // Extract the name part before any # character
     const itemNameParts = name.split('#')
-    // Remove spaces and convert to lowercase for the URL
     return itemNameParts[0].trim().toLowerCase().replace(/\s+/g, '')
   }
 
@@ -67,11 +65,15 @@ export function ItemCard({ item }: ItemCardProps) {
   const extractItemNumber = (name: string): string => {
     const itemNameParts = name.split('#')
     if (itemNameParts.length > 1) {
-      // Get the number after the # symbol
       return itemNameParts[1].trim()
     }
-    return String(item.id) // Fallback to item.id if no # found
+    return String(item.id)
   }
+
+  // Generate Lottie URL
+  const giftName = formatGiftName(item.name)
+  const itemNumber = extractItemNumber(item.name)
+  const lottieUrl = `https://nft.fragment.com/gift/${giftName}-${itemNumber}.lottie.json`
 
   // Load content only when item is visible
   const loadContent = useCallback(() => {
@@ -129,7 +131,7 @@ export function ItemCard({ item }: ItemCardProps) {
                 renderer: 'svg',
                 loop: true,
                 autoplay: true,
-                path: item.lottie
+                path: lottieUrl
               })
 
               // Add class to container for styling
@@ -149,8 +151,8 @@ export function ItemCard({ item }: ItemCardProps) {
     // Always load image first
     loadImage()
 
-    // If not in performance mode and item has lottie, try loading that too
-    if (!state.performanceMode && item.lottie) {
+    // If not in performance mode, try loading the Lottie animation from the generated URL
+    if (!state.performanceMode) {
       loadLottie()
     }
   }, [isVisible, isLoaded, item, state.performanceMode])
