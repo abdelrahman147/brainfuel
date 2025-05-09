@@ -114,7 +114,7 @@ export async function getItems(
   const pageNum = Number(page);
 
   // Use pluralized table name for the collection
-  const tableName = `${giftName}s`;
+  const tableName = getCollectionTableName(giftName);
   // Build the base query for the new structure
   let baseQuery = `SELECT id, base_name, attributes FROM \`${tableName}\``;
   const whereClauses: string[] = [];
@@ -315,4 +315,16 @@ export async function checkFile(giftName: string): Promise<{ db: boolean }> {
   );
 
   return { db: (rows as any)[0].count > 0 };
+}
+
+function getCollectionTableName(collectionName: string): string {
+  // Remove numbers and special characters
+  let cleanName = collectionName.replace(/[#\d]/g, '');
+  // Convert camelCase to lowercase
+  cleanName = cleanName.replace(/([A-Z])/g, '$1').toLowerCase();
+  // Add 's' for plural if not already plural
+  if (!cleanName.endsWith('s')) {
+    cleanName += 's';
+  }
+  return cleanName;
 }
