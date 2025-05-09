@@ -7,7 +7,7 @@ import { LottiePlayer } from './LottiePlayer'
 import { useLanguage } from './app-provider'
 import { translations } from '@/lib/translations'
 
-const BOT_LINK = 'https://t.me/GiftCatalog_bot/GiftCatalog03';
+const BOT_LINK = 'https://t.me/GiftCatalog_bot';
 
 export function InviteSection() {
   const tg = getTelegramWebApp();
@@ -20,7 +20,7 @@ export function InviteSection() {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && user) {
-      setReferralLink(`${BOT_LINK}?startapp=ref_${user.id}`);
+      setReferralLink(`${BOT_LINK}?start=ref_${user.id}`);
       // Fetch invited users from backend
       fetch(`/api/referral?referrer_id=${user.id}`)
         .then(res => res.json())
@@ -110,9 +110,20 @@ export function InviteSection() {
         {invitedUsers.length > 0 ? (
           <div className="w-full max-w-md space-y-4">
             {invitedUsers.map((user, index) => (
-              <div key={index} className="flex items-center space-x-3 p-3 bg-muted/20 dark:bg-muted/10 rounded-lg">
-                <img src={user.photoUrl} alt={user.name} className="w-10 h-10 rounded-full" />
-                <span className="text-sm text-foreground">{user.name}</span>
+              <div
+                key={index}
+                className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700 shadow hover:scale-105 transition-transform"
+              >
+                <img
+                  src={
+                    user.photoUrl && user.photoUrl.length > 10
+                      ? `/api/telegram-photo?file_id=${user.photoUrl}`
+                      : '/images/default-avatar.png'
+                  }
+                  alt={user.name}
+                  className="w-10 h-10 rounded-full border-2 border-purple-400 shadow-md"
+                />
+                <span className="text-base font-semibold text-foreground">{user.name}</span>
               </div>
             ))}
           </div>
