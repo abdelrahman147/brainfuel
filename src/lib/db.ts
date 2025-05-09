@@ -113,8 +113,10 @@ export async function getItems(
   const limitNum = Number(limit);
   const pageNum = Number(page);
 
+  // Use pluralized table name for the collection
+  const tableName = `${giftName}s`;
   // Build the base query for the new structure
-  let baseQuery = `SELECT id, base_name, attributes FROM \`${giftName}\``;
+  let baseQuery = `SELECT id, base_name, attributes FROM \`${tableName}\``;
   const whereClauses: string[] = [];
   const params: any[] = [];
 
@@ -143,7 +145,7 @@ export async function getItems(
   baseQuery += ` ORDER BY ${sortField} ${direction.toUpperCase()}`;
 
   // Count total items for pagination
-  let countQuery = `SELECT COUNT(*) as total FROM \`${giftName}\``;
+  let countQuery = `SELECT COUNT(*) as total FROM \`${tableName}\``;
   if (whereClauses.length > 0) {
     countQuery += ' WHERE ' + whereClauses.join(' AND ');
   }
