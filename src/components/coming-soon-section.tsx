@@ -2,14 +2,19 @@
 
 import { getTelegramWebApp } from '@/lib/telegram'
 import React from 'react'
+import { useLanguage } from './app-provider'
+import { translations } from '@/lib/translations'
 
 export function ComingSoonSection() {
   const tg = getTelegramWebApp()
+  const { language } = useLanguage()
+  const lang: 'en' | 'ru' = language === 'ru' ? 'ru' : 'en'
+  const t = translations[lang].comingSoon
 
   // Handle Telegram channel link click
   const handleChannelClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    const url = "https://t.me/GiftCatlog"
+    const url = 'https://t.me/GiftCatlog'
     if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
       (window as any).Telegram.WebApp.openLink(url)
     } else {
@@ -61,10 +66,10 @@ export function ComingSoonSection() {
             <svg className="w-6 h-6 mr-2 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
-            Coming Soon
+            {t.comingSoon}
           </h2>
           <p className="text-muted-foreground text-center max-w-lg mb-4">
-            We're building exciting new features and collections for the Gift Catalog community. Stay tuned for updates!
+            {t.info}
           </p>
         </div>
       </div>
@@ -77,9 +82,9 @@ export function ComingSoonSection() {
               <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold mb-2">Partners Program</h3>
+          <h3 className="text-lg font-semibold mb-2">{t.partners}</h3>
           <p className="text-muted-foreground text-sm flex-grow">
-            Partner with our project to promote your channel and create more immersive experiences for your community. Join our partnership program to gain visibility and exclusive benefits.
+            {t.partnersDesc}
           </p>
           <div className="flex justify-between mt-4 items-center">
             <a
@@ -87,16 +92,16 @@ export function ComingSoonSection() {
               onClick={(e) => {
                 e.preventDefault()
                 if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
-                  (window as any).Telegram.WebApp.openLink("https://t.me/yousefmsm1")
+                  (window as any).Telegram.WebApp.openLink('https://t.me/yousefmsm1')
                 } else {
-                  window.open("https://t.me/yousefmsm1", '_blank')
+                  window.open('https://t.me/yousefmsm1', '_blank')
                 }
               }}
               className="text-xs text-purple-500 hover:underline transition-all duration-300 hover:text-purple-600"
             >
-              Contact @yousefmsm1
+              {t.contact}
             </a>
-            <span className="text-xs px-3 py-1 bg-purple-500/10 text-purple-500 dark:bg-purple-500/20 dark:text-purple-400 rounded-full">Coming Soon</span>
+            <span className="text-xs px-3 py-1 bg-purple-500/10 text-purple-500 dark:bg-purple-500/20 dark:text-purple-400 rounded-full">{t.comingSoon}</span>
           </div>
         </div>
         {/* Collection Viewer */}
@@ -106,12 +111,12 @@ export function ComingSoonSection() {
               <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM14 11a1 1 0 011 1v1h1a1 1 0 110 2h-1v1a1 1 0 11-2 0v-1h-1a1 1 0 110-2h1v-1a1 1 0 011-1z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold mb-2">Collection Viewer</h3>
+          <h3 className="text-lg font-semibold mb-2">{t.collectionViewer}</h3>
           <p className="text-muted-foreground text-sm flex-grow">
-            Explore collections in an immersive, visually rich interface. Discover exclusive Devil or Angel collections and browse through detailed attributes with our elegant gallery view.
+            {t.collectionViewerDesc}
           </p>
           <div className="flex justify-end mt-4">
-            <span className="text-xs px-3 py-1 bg-amber-500/10 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400 rounded-full">Coming Soon</span>
+            <span className="text-xs px-3 py-1 bg-amber-500/10 text-amber-500 dark:bg-amber-500/20 dark:text-amber-400 rounded-full">{t.comingSoon}</span>
           </div>
         </div>
         {/* Gift Forbes */}
@@ -121,19 +126,19 @@ export function ComingSoonSection() {
               <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold mb-2">Gift Forbes</h3>
+          <h3 className="text-lg font-semibold mb-2">{t.giftForbes}</h3>
           <p className="text-muted-foreground text-sm flex-grow">
-            Your definitive dashboard for Telegram's most prestigious NFT profiles. Track top collectors, discover trending collections, and gain insights into the most valuable NFTs in the community.
+            {t.giftForbesDesc}
           </p>
           <div className="flex justify-end mt-4">
-            <span className="text-xs px-3 py-1 bg-blue-500/10 text-blue-500 dark:bg-blue-500/20 dark:text-blue-400 rounded-full">Coming Soon</span>
+            <span className="text-xs px-3 py-1 bg-blue-500/10 text-blue-500 dark:bg-blue-500/20 dark:text-blue-400 rounded-full">{t.comingSoon}</span>
           </div>
         </div>
       </div>
       {/* Call to Action */}
       <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 backdrop-filter backdrop-blur-lg bg-opacity-90 dark:bg-opacity-60 animate-scale-in" style={{ animationDelay: '300ms' }}>
         <div className="flex flex-col items-center">
-          <h3 className="text-lg font-semibold mb-4">Stay Updated</h3>
+          <h3 className="text-lg font-semibold mb-4">{t.stayUpdated}</h3>
           <a
             href="https://t.me/GiftCatlog"
             onClick={handleChannelClick}
@@ -142,10 +147,10 @@ export function ComingSoonSection() {
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
               <path d="M20.665,3.717l-17.73,6.837c-1.21,0.486-1.203,1.161-0.222,1.462l4.552,1.42l10.532-6.645c0.498-0.303,0.953-0.14,0.579,0.192l-8.533,7.701l0,0l0,0H9.841l0.002,0.001l-0.314,4.692c0.46,0,0.663-0.211,0.921-0.46l2.211-2.15l4.599,3.397c0.848,0.467,1.457,0.227,1.668-0.785l3.019-14.228c0.309-1.239-0.473-1.8-1.282-1.434z" />
             </svg>
-            Follow Our Channel
+            {t.followChannel}
           </a>
           <p className="text-xs text-muted-foreground mt-4">
-            Be the first to know when these exciting features launch!
+            {t.beFirst}
           </p>
         </div>
       </div>

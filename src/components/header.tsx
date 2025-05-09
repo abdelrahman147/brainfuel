@@ -7,9 +7,14 @@ import { getTelegramWebApp } from '@/lib/telegram'
 import Image from 'next/image'
 import { getCollectionData } from '@/lib/api'
 import { toast } from 'sonner'
+import { useLanguage } from './app-provider'
+import { translations } from '@/lib/translations'
 
 export function Header() {
   const { state } = useAppState()
+  const { language } = useLanguage()
+  const lang: 'en' | 'ru' = language === 'ru' ? 'ru' : 'en'
+  const t = translations[lang].header
   const tg = getTelegramWebApp()
 
   // Handle Telegram link click
@@ -54,7 +59,7 @@ export function Header() {
             onClick={handleTelegramChannelClick}
             className="text-lg md:text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-300 bg-clip-text text-transparent dark:glow-text hover:opacity-80 transition-all duration-300 transform hover:scale-105 cursor-pointer"
           >
-            Gifts Catalog
+            {t.giftsCatalog}
           </a>
         </div>
         <div className="flex items-center gap-2">

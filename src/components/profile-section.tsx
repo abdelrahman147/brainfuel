@@ -2,26 +2,15 @@ import { useAppState } from '@/lib/state'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { useEffect, useState } from 'react'
+import { useLanguage } from './app-provider'
+import { translations } from '@/lib/translations'
 
 export function ProfileSection() {
   const { state, dispatch } = useAppState()
   const user = state.telegramUser
-
-  // Language state (persisted in localStorage)
-  const [language, setLanguage] = useState('en')
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const lang = localStorage.getItem('language')
-      if (lang) setLanguage(lang)
-    }
-  }, [])
-  const handleLanguageToggle = () => {
-    const newLang = language === 'en' ? 'ru' : 'en'
-    setLanguage(newLang)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('language', newLang)
-    }
-  }
+  const { language, setLanguage } = useLanguage()
+  const lang: 'en' | 'ru' = language === 'ru' ? 'ru' : 'en'
+  const t = translations[lang].profile
 
   // Dark mode toggle
   const handleDarkModeToggle = () => {
@@ -31,6 +20,11 @@ export function ProfileSection() {
   // Performance mode toggle
   const handlePerformanceToggle = () => {
     dispatch({ type: 'SET_PERFORMANCE_MODE', payload: !state.performanceMode })
+  }
+
+  // Language toggle
+  const handleLanguageToggle = () => {
+    setLanguage(lang === 'en' ? 'ru' : 'en')
   }
 
   return (
@@ -52,24 +46,30 @@ export function ProfileSection() {
         <div className="flex gap-4 mb-6">
           <div className="flex flex-col items-center">
             <span className="text-lg font-semibold text-purple-500">0</span>
-            <span className="text-xs text-muted-foreground">Points</span>
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              {t.points}
+              <span className="ml-1 px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-amber-500 text-[10px] rounded-full">{t.addSoon}</span>
+            </span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-lg font-semibold text-indigo-500">0</span>
-            <span className="text-xs text-muted-foreground">TON Earned</span>
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              {t.tonEarned}
+              <span className="ml-1 px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-amber-500 text-[10px] rounded-full">{t.addSoon}</span>
+            </span>
           </div>
         </div>
         <div className="flex gap-3 w-full justify-center mb-4">
           <Button variant="outline" onClick={handleDarkModeToggle} className="rounded-lg px-4 py-2">
-            {state.darkMode ? 'Light Mode' : 'Dark Mode'}
+            {state.darkMode ? t.lightMode : t.darkMode}
           </Button>
           <Button variant="outline" onClick={handlePerformanceToggle} className="rounded-lg px-4 py-2">
-            {state.performanceMode ? 'Performance On' : 'Performance Off'}
+            {state.performanceMode ? t.performanceOn : t.performanceOff}
           </Button>
         </div>
         <div className="flex gap-3 w-full justify-center">
           <Button variant="outline" onClick={handleLanguageToggle} className="rounded-lg px-4 py-2">
-            {language === 'en' ? 'English' : 'Русский'}
+            {lang === 'en' ? t.english : t.russian}
           </Button>
         </div>
       </div>

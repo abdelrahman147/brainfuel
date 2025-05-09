@@ -7,9 +7,19 @@ import {
   initialState,
   loadPersistedState
 } from '@/lib/state'
+import React, { createContext, useContext } from 'react'
 
 interface AppProviderProps {
   children: React.ReactNode
+}
+
+export const LanguageContext = createContext({
+  language: 'en',
+  setLanguage: (lang: string) => {},
+})
+
+export function useLanguage() {
+  return useContext(LanguageContext)
 }
 
 export function AppProvider({ children }: AppProviderProps) {
@@ -21,6 +31,8 @@ export function AppProvider({ children }: AppProviderProps) {
     appReducer,
     initialState
   )
+
+  const [language, setLanguage] = useState('en')
 
   // Handle client-side initialization and load persisted state after hydration
   useEffect(() => {
@@ -48,6 +60,20 @@ export function AppProvider({ children }: AppProviderProps) {
     setHydrated(true)
   }, [])
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const lang = localStorage.getItem('language')
+      if (lang) setLanguage(lang)
+    }
+  }, [])
+
+  const handleSetLanguage = (lang: string) => {
+    setLanguage(lang)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', lang)
+    }
+  }
+
   // This ensures that the UI doesn't flicker before the client-side state is loaded
   if (!hydrated) {
     // Return a placeholder or null while we wait for hydration
@@ -56,7 +82,9 @@ export function AppProvider({ children }: AppProviderProps) {
 
   return (
     <AppStateContext.Provider value={{ state, dispatch }}>
-      {children}
+      <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage }}>
+        {children}
+      </LanguageContext.Provider>
     </AppStateContext.Provider>
   )
 }

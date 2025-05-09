@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { getTelegramWebApp } from '@/lib/telegram'
 import duckAnimation from '../../duck_invitation.json'
 import { LottiePlayer } from './LottiePlayer'
+import { useLanguage } from './app-provider'
+import { translations } from '@/lib/translations'
 
 const BOT_LINK = 'https://t.me/GiftCatalog_bot/GiftCatalog03';
 
@@ -11,6 +13,9 @@ export function InviteSection() {
   const tg = getTelegramWebApp();
   const user = tg?.initDataUnsafe?.user;
   const [referralLink, setReferralLink] = useState('');
+  const { language } = useLanguage();
+  const lang: 'en' | 'ru' = language === 'ru' ? 'ru' : 'en';
+  const t = translations[lang].invite;
 
   useEffect(() => {
     if (typeof window !== 'undefined' && user) {
@@ -25,11 +30,11 @@ export function InviteSection() {
     try {
       await navigator.clipboard.writeText(referralLink);
       if (tg && typeof (window as any).Telegram?.WebApp?.showPopup === 'function') {
-        (window as any).Telegram.WebApp.showPopup({ message: 'Link copied!' });
+        (window as any).Telegram.WebApp.showPopup({ message: language === 'ru' ? 'Скопировано!' : 'Copied!' });
       }
     } catch {
       if (tg && typeof (window as any).Telegram?.WebApp?.showPopup === 'function') {
-        (window as any).Telegram.WebApp.showPopup({ message: 'Failed to copy link' });
+        (window as any).Telegram.WebApp.showPopup({ message: language === 'ru' ? 'Не удалось скопировать' : 'Failed to copy link' });
       }
     }
   };
@@ -37,9 +42,9 @@ export function InviteSection() {
   const handleShare = () => {
     if (typeof window === 'undefined') return;
     if (tg && typeof (window as any).Telegram?.WebApp?.shareLink === 'function') {
-      (window as any).Telegram.WebApp.shareLink(referralLink, { title: 'Invite to GiftCatalog' });
+      (window as any).Telegram.WebApp.shareLink(referralLink, { title: t.inviteFriends });
     } else if (navigator.share) {
-      navigator.share({ title: 'Invite to GiftCatalog', url: referralLink });
+      navigator.share({ title: t.inviteFriends, url: referralLink });
     }
   };
 
@@ -55,13 +60,13 @@ export function InviteSection() {
             rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
           />
         </div>
-        <h2 className="text-2xl font-bold text-foreground mt-4 mb-2">Invite Friends</h2>
+        <h2 className="text-2xl font-bold text-foreground mt-4 mb-2">{t.inviteFriends}</h2>
         <p className="text-muted-foreground text-center max-w-lg mb-4">
-          Invite friends and earn Points rewards and to convert them to TON from their activity in (Disclosed).
+          {t.inviteText}
         </p>
       </div>
       <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 flex flex-col items-center">
-        <h3 className="text-lg font-semibold mb-4">Your Referral Link</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.referral}</h3>
         <div className="w-full max-w-md flex items-center space-x-2 mb-4">
           <input
             type="text"
@@ -86,11 +91,11 @@ export function InviteSection() {
           <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
           </svg>
-          Share Link
+          {t.share}
         </button>
       </div>
       <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 flex flex-col items-center">
-        <h3 className="text-lg font-semibold mb-4">Invited Friends</h3>
+        <h3 className="text-lg font-semibold mb-4">{t.invited}</h3>
         {invitedUsers.length > 0 ? (
           <div className="w-full max-w-md space-y-4">
             {invitedUsers.map((user, index) => (
@@ -101,7 +106,7 @@ export function InviteSection() {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm">No friends invited yet. Share your link to start earning rewards!</p>
+          <p className="text-muted-foreground text-sm">{t.noInvited}</p>
         )}
       </div>
     </div>
