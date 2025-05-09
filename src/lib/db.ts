@@ -194,10 +194,10 @@ export async function getAttributes(giftName: string): Promise<AttributeWithPerc
   }
 
   const pool = getConnectionPool();
+  const tableName = getCollectionTableName(giftName);
 
   const [rows] = await pool.execute(
-    'SELECT attributes FROM items WHERE name LIKE ? AND attributes IS NOT NULL',
-    [`${giftName}%`]
+    `SELECT attributes FROM \`${tableName}\` WHERE attributes IS NOT NULL`
   );
 
   const attributes: Record<string, Record<string, number>> = {};
@@ -269,10 +269,10 @@ export async function getStats(giftName: string): Promise<{ totalItems: number }
   }
 
   const pool = getConnectionPool();
+  const tableName = getCollectionTableName(giftName);
 
   const [rows] = await pool.execute(
-    'SELECT COUNT(*) as totalItems FROM items WHERE name LIKE ?',
-    [`${giftName}%`]
+    `SELECT COUNT(*) as totalItems FROM \`${tableName}\``
   );
 
   const totalItems = (rows as any)[0].totalItems;
@@ -292,15 +292,34 @@ export async function listExports(): Promise<{ db: GiftInfo[] }> {
 
   const pool = getConnectionPool();
 
-  // Extract the base name (before #) to group by collection
-  const [rows] = await pool.execute(
-    'SELECT SUBSTRING_INDEX(name, "#", 1) as name, COUNT(*) as total FROM items GROUP BY SUBSTRING_INDEX(name, "#", 1)'
+  // Get all tables that match our collection pattern
+  const [tables] = await pool.execute(
+    "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name LIKE '%s'",
+    [process.env.MYSQL_DATABASE]
   );
 
-  const data = rows as GiftInfo[];
-  cache.collections = { data, timestamp: now };
+  const collections: GiftInfo[] = [];
+  
+  for (const table of tables as any[]) {
+    const tableName = table.table_name;
+    const [count] = await pool.execute(
+      `SELECT COUNT(*) as total FROM \`${tableName}\``
+    );
+    
+    // Convert table name back to collection name (remove 's' and convert to camelCase)
+    const collectionName = tableName
+      .slice(0, -1) // remove 's'
+      .replace(/(?:^|\s)(\w)/g, (_match: string, p1: string) => p1.toUpperCase());
+    
+    collections.push({
+      name: collectionName,
+      total: (count as any)[0].total
+    });
+  }
 
-  return { db: data };
+  cache.collections = { data: collections, timestamp: now };
+
+  return { db: collections };
 }
 
 /**
@@ -308,10 +327,10 @@ export async function listExports(): Promise<{ db: GiftInfo[] }> {
  */
 export async function checkFile(giftName: string): Promise<{ db: boolean }> {
   const pool = getConnectionPool();
+  const tableName = getCollectionTableName(giftName);
 
   const [rows] = await pool.execute(
-    'SELECT COUNT(*) as count FROM items WHERE name LIKE ?',
-    [`${giftName}%`]
+    `SELECT COUNT(*) as count FROM \`${tableName}\``
   );
 
   return { db: (rows as any)[0].count > 0 };
