@@ -281,9 +281,15 @@ export async function getStats(giftName: string): Promise<{ totalItems: number }
   return { totalItems };
 }
 
-/**
- * List all available gift collections
- */
+function toDisplayName(tableName: string): string {
+  // Remove trailing 's', split on word boundaries, capitalize each word
+  let base = tableName.endsWith('s') ? tableName.slice(0, -1) : tableName;
+  // Insert space before each uppercase letter (if any), then capitalize
+  base = base.replace(/([a-z])([A-Z])/g, '$1 $2');
+  // Capitalize first letter of each word
+  return base.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 export async function listExports(): Promise<{ db: GiftInfo[] }> {
   const now = Date.now();
   if (cache.collections && now - cache.collections.timestamp < CACHE_TTL) {
@@ -292,34 +298,32 @@ export async function listExports(): Promise<{ db: GiftInfo[] }> {
 
   const pool = getConnectionPool();
 
-  // Get all tables that match our collection pattern
-  const [tables] = await pool.execute(
-    "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name LIKE '%s'",
-    [process.env.MYSQL_DATABASE]
-  );
-
-  const collections: GiftInfo[] = [];
-  
-  for (const table of tables as any[]) {
-    const tableName = table.table_name;
-    const [count] = await pool.execute(
-      `SELECT COUNT(*) as total FROM \`${tableName}\``
+  try {
+    const [tables] = await pool.execute(
+      "SELECT table_name FROM information_schema.tables WHERE table_schema = ? AND table_name LIKE '%s'",
+      [process.env.MYSQL_DATABASE]
     );
-    
-    // Convert table name back to collection name (remove 's' and convert to camelCase)
-    const collectionName = tableName
-      .slice(0, -1) // remove 's'
-      .replace(/(?:^|\s)(\w)/g, (_match: string, p1: string) => p1.toUpperCase());
-    
-    collections.push({
-      name: collectionName,
-      total: (count as any)[0].total
-    });
+    console.log('Found tables:', tables);
+
+    const collections: GiftInfo[] = [];
+    for (const table of tables as any[]) {
+      const tableName = table.table_name;
+      const [count] = await pool.execute(
+        `SELECT COUNT(*) as total FROM \`${tableName}\``
+      );
+      const displayName = toDisplayName(tableName);
+      console.log('Processing table:', tableName, '-> displayName:', displayName, 'count:', (count as any)[0].total);
+      collections.push({
+        name: displayName,
+        total: (count as any)[0].total
+      });
+    }
+    cache.collections = { data: collections, timestamp: now };
+    return { db: collections };
+  } catch (error) {
+    console.error('Error in listExports:', error);
+    throw error;
   }
-
-  cache.collections = { data: collections, timestamp: now };
-
-  return { db: collections };
 }
 
 /**
