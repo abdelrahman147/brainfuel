@@ -48,14 +48,14 @@ export function ProfileSection() {
             <span className="text-lg font-semibold text-purple-500">0</span>
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               {t.points}
-              <span className="ml-1 px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-amber-500 text-[10px] rounded-full">{t.addSoon}</span>
+              <span className="ml-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-purple-400 text-white text-[10px] rounded-full animate-pulse font-bold shadow-md">{t.soon}</span>
             </span>
           </div>
           <div className="flex flex-col items-center">
             <span className="text-lg font-semibold text-indigo-500">0</span>
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               {t.tonEarned}
-              <span className="ml-1 px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-amber-500 text-[10px] rounded-full">{t.addSoon}</span>
+              <span className="ml-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-purple-400 text-white text-[10px] rounded-full animate-pulse font-bold shadow-md">{t.soon}</span>
             </span>
           </div>
         </div>

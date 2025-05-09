@@ -15,6 +15,7 @@ export const translations = {
       tonEarnedSoon: 'TON Earned (add soon)',
       totalPointsSoon: 'Total Points (add soon)',
     },
+    profileLabel: 'Profile',
     donation: {
       support: 'Support the Project',
       help: 'Your donations help keep this project running! Send TON to the wallet address below.',
@@ -66,6 +67,7 @@ export const translations = {
       tonEarnedSoon: 'TON заработано (скоро)',
       totalPointsSoon: 'Всего баллов (скоро)',
     },
+    profileLabel: 'Профиль',
     donation: {
       support: 'Поддержать проект',
       help: 'Ваши пожертвования помогают поддерживать этот проект! Отправьте TON на адрес кошелька ниже.',
