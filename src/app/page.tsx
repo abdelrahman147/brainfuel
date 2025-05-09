@@ -7,8 +7,6 @@ import { DonationSection } from '@/components/donation-section'
 import { Pagination } from '@/components/pagination'
 import { getTelegramWebApp } from '@/lib/telegram'
 import { ProfileSection } from '@/components/profile-section'
-import Player from 'lottie-react'
-import duckAnimation from '../../duck_invitation.json'
 import { InviteSection } from '@/components/invite-section'
 import { ComingSoonSection } from '@/components/coming-soon-section'
 

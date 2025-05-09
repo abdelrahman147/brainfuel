@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { getTelegramWebApp } from '@/lib/telegram'
-import Player from 'lottie-react'
 import duckAnimation from '../../duck_invitation.json'
+import { LottiePlayer } from './LottiePlayer'
 
 export function InviteSection() {
   const tg = getTelegramWebApp();
@@ -47,7 +47,7 @@ export function InviteSection() {
       <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 backdrop-filter backdrop-blur-lg bg-opacity-90 dark:bg-opacity-60 animate-scale-in">
         <div className="flex flex-col items-center">
           <div className="w-24 h-24 mb-6 relative flex items-center justify-center">
-            <Player
+            <LottiePlayer
               animationData={duckAnimation}
               style={{ width: '100%', height: '100%' }}
               loop

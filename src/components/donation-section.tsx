@@ -6,162 +6,106 @@ import { useAppState } from '@/lib/state'
 import { getTelegramWebApp } from '@/lib/telegram'
 import { getWallet } from '@/lib/api'
 import { toast } from 'sonner'
-import Player from 'lottie-react'
-import donationDuckAnimation from '../../donation page duck.json'
+import duckAnimation from '../../donation page duck.json'
+import { LottiePlayer } from './LottiePlayer'
 
 export function DonationSection() {
   const { state } = useAppState()
   const tg = getTelegramWebApp()
-  const [tonWalletAddress, setTonWalletAddress] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(false)
+  const user = tg?.initDataUnsafe?.user
+  const [donationAmount, setDonationAmount] = useState('10')
+  const [isProcessing, setIsProcessing] = useState(false)
 
-  useEffect(() => {
-    const loadWalletAddress = async () => {
-      setIsLoading(true)
-      try {
-        const { address } = await getWallet()
-        setTonWalletAddress(address)
-
-        // Removed Telegram MainButton setup for Mini App compatibility
-      } catch (error) {
-        console.error('Failed to load wallet address:', error)
-        toast.error('Failed to load wallet address')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadWalletAddress()
-
-    return () => {
-      // Removed Telegram MainButton cleanup
-    }
-  }, [tg.MainButton])
-
-  const handleCopyWallet = async () => {
-    if (!tonWalletAddress) return
-
+  const handleDonate = async () => {
+    if (typeof window === 'undefined') return
+    setIsProcessing(true)
     try {
-      await navigator.clipboard.writeText(tonWalletAddress)
-      toast.success('Wallet address copied to clipboard!')
-      // Removed Telegram MainButton feedback
+      if (tg && typeof (window as any).Telegram?.WebApp?.openInvoice === 'function') {
+        await (window as any).Telegram.WebApp.openInvoice({
+          title: 'Donation to GiftCatalog',
+          description: 'Support our development',
+          payload: JSON.stringify({
+            userId: user?.id,
+            amount: parseFloat(donationAmount)
+          }),
+          provider_token: process.env.NEXT_PUBLIC_PAYMENT_TOKEN,
+          currency: 'USD',
+          prices: [{
+            label: 'Donation',
+            amount: Math.round(parseFloat(donationAmount) * 100)
+          }]
+        })
+      }
     } catch (error) {
-      toast.error('Failed to copy wallet address')
-    }
-  }
-
-  // Handle Telegram link click
-  const handleTelegramLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault()
-    const url = e.currentTarget.href
-
-    // Use Telegram's openLink method if available to prevent mini app from closing
-    if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
-      (window as any).Telegram.WebApp.openLink(url)
-    } else {
-      // Fallback for non-Telegram environments
-      window.open(url, '_blank')
+      console.error('Payment error:', error)
+      if (tg && typeof (window as any).Telegram?.WebApp?.showPopup === 'function') {
+        (window as any).Telegram.WebApp.showPopup({ message: 'Payment failed. Please try again.' })
+      }
+    } finally {
+      setIsProcessing(false)
     }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Duck Animation at the top - backgroundless and centered */}
-      <div className="flex justify-center mt-4 mb-2">
-        <div className="w-52 h-52">
-          <Player 
-            animationData={donationDuckAnimation} 
-            style={{ width: '100%', height: '100%' }} 
-            loop 
-            autoplay 
-            rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
-          />
-        </div>
-      </div>
-
-      {/* Donation Title & Description */}
-      <div className="flex flex-col items-center text-center space-y-2 mb-4 animate-fade-in">
-        <h2 className="text-3xl font-bold text-foreground">Support the Project</h2>
-        <p className="text-base text-muted-foreground max-w-md">
-          Your donation helps us build more features and keep the project alive! Every TON you send makes a difference.
-        </p>
-      </div>
-
-      {/* Wallet Box & Donate Button */}
-      <div className="flex flex-col items-center space-y-3 mb-8 mt-2">
-        <div className="w-full max-w-md bg-muted/20 dark:bg-muted/10 rounded-xl p-4 flex flex-col items-center shadow-md border border-border dark:border-border/30">
-          <span className="text-xs text-muted-foreground mb-1">TON Wallet Address</span>
-          <div className="flex w-full items-center space-x-2">
-            <input
-              type="text"
-              readOnly
-              value={isLoading ? 'Loading...' : tonWalletAddress}
-              className="flex-1 bg-transparent p-2 rounded-lg text-sm text-foreground border-none focus:outline-none"
+    <div className="space-y-6 animate-fade-in">
+      {/* Donation Card */}
+      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 backdrop-filter backdrop-blur-lg bg-opacity-90 dark:bg-opacity-60 animate-scale-in">
+        <div className="flex flex-col items-center">
+          <div className="w-24 h-24 mb-6 relative flex items-center justify-center">
+            <LottiePlayer
+              animationData={duckAnimation}
+              style={{ width: '100%', height: '100%' }}
+              loop
+              autoplay
+              rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
             />
-            <Button
-              size="sm"
-              onClick={handleCopyWallet}
-              disabled={isLoading || !tonWalletAddress}
-              className="bg-blue-500 text-white px-3 py-1 rounded-md text-xs hover:bg-blue-600 transition-all duration-200"
-            >
-              Copy
-            </Button>
           </div>
-        </div>
-        <Button
-          className="w-full max-w-md mt-2 py-3 rounded-xl text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center gap-2 shadow-lg hover:scale-105 transition-transform"
-          onClick={handleCopyWallet}
-          disabled={isLoading || !tonWalletAddress}
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><path d="M12 8v4l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          Donate TON
-        </Button>
-      </div>
-
-      {/* Follow and Contact section */}
-      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 backdrop-filter backdrop-blur-lg bg-opacity-90 dark:bg-opacity-60">
-        <div className="flex flex-col items-center justify-center space-y-3">
-          <a
-            href="https://t.me/yousefmsm1"
-            onClick={handleTelegramLinkClick}
-            className="flex items-center justify-center w-full bg-accent text-accent-foreground hover:bg-accent/80 transition-colors rounded-lg py-2.5 text-sm font-medium"
-          >
-            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v5h-2zm0 7h2v2h-2z" />
+          <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center">
+            <svg className="w-6 h-6 mr-2 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
             </svg>
-            Follow the Channel
-          </a>
-
-          <a
-            href="https://t.me/yousefmsm1"
-            onClick={handleTelegramLinkClick}
-            className="flex items-center justify-center w-full bg-muted/20 dark:bg-muted/10 text-foreground dark:text-foreground hover:bg-muted/30 dark:hover:bg-muted/20 transition-colors rounded-lg py-2.5 text-sm font-medium"
-          >
-            <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z" />
-            </svg>
-            Contact Developer
-          </a>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="py-4 text-center border-t border-border/30 dark:border-border/10">
-        <div className="flex items-center justify-center text-sm text-muted-foreground">
-          <span>Built with</span>
-          <span className="inline-block mx-2">
-            <svg
-              className="w-4 h-4 text-red-500 animate-heartbeat"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              style={{
-                filter: 'drop-shadow(0 0 4px rgba(220, 38, 38, 0.8))',
-              }}
+            Support Us
+          </h2>
+          <p className="text-muted-foreground text-center max-w-lg mb-6">
+            Your support helps us maintain and improve the Gift Catalog platform. Every contribution makes a difference!
+          </p>
+          <div className="w-full max-w-xs space-y-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="number"
+                value={donationAmount}
+                onChange={(e) => setDonationAmount(e.target.value)}
+                className="flex-1 px-4 py-2 rounded-lg border border-border dark:border-border/30 bg-background/50 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                min="1"
+                step="1"
+              />
+              <span className="text-foreground font-medium">USD</span>
+            </div>
+            <button
+              onClick={handleDonate}
+              disabled={isProcessing}
+              className="w-full px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
-          </span>
-          <span>by JustWaitingTeam</span>
+              {isProcessing ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clipRule="evenodd" />
+                  </svg>
+                  <span>Donate Now</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
