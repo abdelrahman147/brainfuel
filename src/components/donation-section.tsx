@@ -6,6 +6,8 @@ import { useAppState } from '@/lib/state'
 import { getTelegramWebApp } from '@/lib/telegram'
 import { getWallet } from '@/lib/api'
 import { toast } from 'sonner'
+import Player from 'lottie-react'
+import donationDuckAnimation from '../../donation page duck.json'
 
 export function DonationSection() {
   const { state } = useAppState()
@@ -64,40 +66,56 @@ export function DonationSection() {
 
   return (
     <div className="space-y-6">
-      {/* Support section */}
-      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 backdrop-filter backdrop-blur-lg bg-opacity-90 dark:bg-opacity-60">
-        <h2 className="text-lg font-semibold text-foreground dark:text-foreground mb-4 flex items-center">
-          <svg
-            className="w-5 h-5 mr-2 text-red-500 animate-heartbeat"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
-          Support the Project
-        </h2>
-        <p className="text-muted-foreground mb-4 text-sm">
-          Your donations help keep this project running! Send TON to the wallet address below.
-        </p>
-        <div className="relative mb-4">
-          <input
-            type="text"
-            readOnly
-            value={isLoading ? 'Loading...' : tonWalletAddress}
-            className="w-full bg-muted/20 dark:bg-muted/10 p-3 rounded-lg text-sm text-foreground dark:text-muted-foreground border border-border dark:border-border/30 focus:outline-none focus:ring-1 focus:ring-accent"
+      {/* Duck Animation at the top - backgroundless and centered */}
+      <div className="flex justify-center mt-4 mb-2">
+        <div className="w-52 h-52">
+          <Player 
+            animationData={donationDuckAnimation} 
+            style={{ width: '100%', height: '100%' }} 
+            loop 
+            autoplay 
+            rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
           />
-          <Button
-            size="sm"
-            onClick={handleCopyWallet}
-            disabled={isLoading || !tonWalletAddress}
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-accent text-accent-foreground px-3 py-1 rounded-md text-xs hover:bg-accent/80 transition-all duration-200"
-          >
-            Copy
-          </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Please verify the wallet address before sending any funds.
+      </div>
+
+      {/* Donation Title & Description */}
+      <div className="flex flex-col items-center text-center space-y-2 mb-4 animate-fade-in">
+        <h2 className="text-3xl font-bold text-foreground">Support the Project</h2>
+        <p className="text-base text-muted-foreground max-w-md">
+          Your donation helps us build more features and keep the project alive! Every TON you send makes a difference.
         </p>
+      </div>
+
+      {/* Wallet Box & Donate Button */}
+      <div className="flex flex-col items-center space-y-3 mb-8 mt-2">
+        <div className="w-full max-w-md bg-muted/20 dark:bg-muted/10 rounded-xl p-4 flex flex-col items-center shadow-md border border-border dark:border-border/30">
+          <span className="text-xs text-muted-foreground mb-1">TON Wallet Address</span>
+          <div className="flex w-full items-center space-x-2">
+            <input
+              type="text"
+              readOnly
+              value={isLoading ? 'Loading...' : tonWalletAddress}
+              className="flex-1 bg-transparent p-2 rounded-lg text-sm text-foreground border-none focus:outline-none"
+            />
+            <Button
+              size="sm"
+              onClick={handleCopyWallet}
+              disabled={isLoading || !tonWalletAddress}
+              className="bg-blue-500 text-white px-3 py-1 rounded-md text-xs hover:bg-blue-600 transition-all duration-200"
+            >
+              Copy
+            </Button>
+          </div>
+        </div>
+        <Button
+          className="w-full max-w-md mt-2 py-3 rounded-xl text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-500 text-white flex items-center justify-center gap-2 shadow-lg hover:scale-105 transition-transform"
+          onClick={handleCopyWallet}
+          disabled={isLoading || !tonWalletAddress}
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" /><path d="M12 8v4l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          Donate TON
+        </Button>
       </div>
 
       {/* Follow and Contact section */}

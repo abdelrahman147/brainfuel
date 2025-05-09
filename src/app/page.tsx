@@ -7,6 +7,8 @@ import { DonationSection } from '@/components/donation-section'
 import { Pagination } from '@/components/pagination'
 import { getTelegramWebApp } from '@/lib/telegram'
 import { ProfileSection } from '@/components/profile-section'
+import Player from 'lottie-react'
+import duckAnimation from '../../duck_invitation.json'
 
 function ComingSoonSection() {
   const tg = getTelegramWebApp()
@@ -170,8 +172,85 @@ function ComingSoonSection() {
   )
 }
 
+function InviteSection() {
+  const tg = getTelegramWebApp();
+  const user = tg?.initDataUnsafe?.user;
+  const referralLink = typeof window !== 'undefined' && user
+    ? `${window.location.origin}/ref/${user.id}`
+    : 'https://yourapp.com/ref/USERID';
+
+  const invitedUsers: { name: string; photoUrl: string }[] = [];
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.showPopup) {
+        (window as any).Telegram.WebApp.showPopup({ message: 'Link copied!' });
+      }
+    } catch {
+      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.showPopup) {
+        (window as any).Telegram.WebApp.showPopup({ message: 'Failed to copy link' });
+      }
+    }
+  };
+
+  const handleShare = () => {
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.shareLink) {
+      (window as any).Telegram.WebApp.shareLink(referralLink, { title: 'Invite to GiftCatalog' });
+    } else if (navigator.share) {
+      navigator.share({ title: 'Invite to GiftCatalog', url: referralLink });
+    } else {
+      handleCopy();
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center space-y-6 animate-fade-in">
+      {/* Duck Animation */}
+      <div className="w-40 h-40 rounded-2xl overflow-hidden shadow-lg mb-2 flex items-center justify-center bg-white dark:bg-muted">
+        <Player 
+          animationData={duckAnimation} 
+          style={{ width: '100%', height: '100%' }} 
+          loop 
+          autoplay 
+          rendererSettings={{ preserveAspectRatio: 'xMidYMid meet' }}
+        />
+      </div>
+      {/* Title */}
+      <h2 className="text-2xl font-bold text-center">Referral Program</h2>
+      {/* Description */}
+      <p className="text-center text-base text-muted-foreground max-w-xs mb-2">
+        Invite friends and earn <b>Points</b> rewards and to convert them to <b>TON</b><br />
+        from their activity in <b>(Disclosed)</b>.
+      </p>
+      {/* Invite Button Row */}
+      <div className="flex w-full max-w-md mb-2">
+        <button
+          className="flex-1 font-semibold py-3 rounded-l-xl text-lg transition-colors duration-200 bg-blue-500 text-white"
+          onClick={handleShare}
+        >
+          Invite Friends
+        </button>
+        <button
+          className="bg-blue-500 text-white px-4 rounded-r-xl flex items-center justify-center transition-colors duration-200"
+          onClick={handleCopy}
+          aria-label="Copy referral link"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        </button>
+      </div>
+      {/* Profit Referrals */}
+      <div className="w-full max-w-md text-xs font-semibold mb-1">PROFIT REFERRALS: 0</div>
+      {/* Empty State */}
+      <div className="w-full max-w-md bg-muted/20 rounded-xl py-6 text-center text-muted-foreground">
+        You haven't invited any friends yet
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'catalog' | 'donation' | 'soon' | 'profile'>('catalog')
+  const [activeTab, setActiveTab] = useState<'catalog' | 'donation' | 'soon' | 'profile' | 'invite'>('catalog')
 
   useEffect(() => {
     // Add the scrollbar-hide utility class CSS and animations
@@ -275,6 +354,12 @@ export default function Home() {
             <ComingSoonSection />
           </div>
         )
+      case 'invite':
+        return (
+          <div key="invite" className="page-enter">
+            <InviteSection />
+          </div>
+        )
       default:
         return null
     }
@@ -282,7 +367,7 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-2 py-4 max-w-7xl">
-      <Header />
+      {activeTab === 'catalog' && <Header />}
 
       <main className="pb-20 sm:pb-0">
         {renderContent()}
@@ -342,6 +427,19 @@ export default function Home() {
             <path d="M10 2a4 4 0 110 8 4 4 0 010-8zm0 10a6 6 0 00-6 6h12a6 6 0 00-6-6z" />
           </svg>
           <span className="text-xs">Profile</span>
+        </button>
+
+        <button
+          className={`flex-1 flex flex-col items-center justify-center py-2 transition-all duration-300 ${
+            activeTab === 'invite' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'
+          }`}
+          onClick={() => setActiveTab('invite')}
+          aria-label="invite tab"
+        >
+          <svg className="w-5 h-5 mb-1" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05C15.64 13.36 17 14.28 17 15.5V19h7v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+          </svg>
+          <span className="text-xs">Invite</span>
         </button>
       </nav>
     </div>

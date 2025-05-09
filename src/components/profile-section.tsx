@@ -1,10 +1,37 @@
 import { useAppState } from '@/lib/state'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
+import { useEffect, useState } from 'react'
 
 export function ProfileSection() {
-  const { state } = useAppState()
+  const { state, dispatch } = useAppState()
   const user = state.telegramUser
+
+  // Language state (persisted in localStorage)
+  const [language, setLanguage] = useState('en')
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const lang = localStorage.getItem('language')
+      if (lang) setLanguage(lang)
+    }
+  }, [])
+  const handleLanguageToggle = () => {
+    const newLang = language === 'en' ? 'ru' : 'en'
+    setLanguage(newLang)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('language', newLang)
+    }
+  }
+
+  // Dark mode toggle
+  const handleDarkModeToggle = () => {
+    dispatch({ type: 'SET_DARK_MODE', payload: !state.darkMode })
+  }
+
+  // Performance mode toggle
+  const handlePerformanceToggle = () => {
+    dispatch({ type: 'SET_PERFORMANCE_MODE', payload: !state.performanceMode })
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
