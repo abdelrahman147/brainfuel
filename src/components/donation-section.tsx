@@ -5,7 +5,7 @@ import { getTelegramWebApp } from '@/lib/telegram'
 import { LottiePlayer } from './LottiePlayer'
 import duckAnimation from '../../donation page duck.json'
 
-const TON_WALLET = 'UQCFRqB2vZnGZRh3ZoZAI tNidk8zpkN...'; // Replace with your actual wallet address
+const TON_WALLET = process.env.NEXT_PUBLIC_TON_WALLET_ADDRESS || process.env.TON_WALLET_ADDRESS || '';
 
 export function DonationSection() {
   const [copied, setCopied] = useState(false)

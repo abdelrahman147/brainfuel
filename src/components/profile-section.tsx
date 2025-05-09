@@ -34,30 +34,43 @@ export function ProfileSection() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 flex flex-col items-center text-center">
-        {user?.photo_url && (
-          <Image
-            src={user.photo_url}
-            alt={user.first_name}
-            width={120}
-            height={120}
-            className="rounded-full mb-4"
-          />
-        )}
-        <div className="flex items-center space-x-2 mb-4">
-          <h2 className="text-2xl font-bold text-foreground">{user?.first_name || 'Guest'}</h2>
-          {user?.id && (
-            <span className="px-3 py-1 rounded-full bg-muted/20 dark:bg-muted/10 text-sm text-muted-foreground">#{user.id}</span>
-          )}
-        </div>
-
-        <div className="w-full bg-muted/10 dark:bg-muted/5 rounded-xl p-4 flex items-center justify-between mb-2">
-          <div>
-            <p className="text-muted-foreground text-sm">Balance</p>
-            <p className="text-2xl font-bold">0.00</p>
+    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
+      <div className="bg-card border border-border dark:border-border/30 rounded-2xl shadow-xl p-8 flex flex-col items-center w-full max-w-md">
+        <div className="relative mb-4">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-indigo-400 flex items-center justify-center shadow-lg">
+            <Image
+              src={user?.photo_url || '/images/default-avatar.png'}
+              alt="Profile"
+              width={96}
+              height={96}
+              className="rounded-full object-cover border-4 border-white dark:border-gray-900"
+            />
           </div>
-          <Button className="text-base px-6 py-3">Withdraw</Button>
+        </div>
+        <h2 className="text-2xl font-bold text-foreground mb-1">{user?.first_name || 'Anonymous'}</h2>
+        <p className="text-muted-foreground text-sm mb-4">@{user?.username || 'username'}</p>
+        <div className="flex gap-4 mb-6">
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-semibold text-purple-500">0</span>
+            <span className="text-xs text-muted-foreground">Points</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-semibold text-indigo-500">0</span>
+            <span className="text-xs text-muted-foreground">TON Earned</span>
+          </div>
+        </div>
+        <div className="flex gap-3 w-full justify-center mb-4">
+          <Button variant="outline" onClick={handleDarkModeToggle} className="rounded-lg px-4 py-2">
+            {state.darkMode ? 'Light Mode' : 'Dark Mode'}
+          </Button>
+          <Button variant="outline" onClick={handlePerformanceToggle} className="rounded-lg px-4 py-2">
+            {state.performanceMode ? 'Performance On' : 'Performance Off'}
+          </Button>
+        </div>
+        <div className="flex gap-3 w-full justify-center">
+          <Button variant="outline" onClick={handleLanguageToggle} className="rounded-lg px-4 py-2">
+            {language === 'en' ? 'English' : 'Русский'}
+          </Button>
         </div>
       </div>
     </div>

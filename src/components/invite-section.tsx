@@ -57,7 +57,7 @@ export function InviteSection() {
         </div>
         <h2 className="text-2xl font-bold text-foreground mt-4 mb-2">Invite Friends</h2>
         <p className="text-muted-foreground text-center max-w-lg mb-4">
-          Share your referral link with friends and earn rewards when they join the Gift Catalog community!
+          Invite friends and earn Points rewards and to convert them to TON from their activity in (Disclosed).
         </p>
       </div>
       <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 flex flex-col items-center">
