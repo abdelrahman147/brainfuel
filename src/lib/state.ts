@@ -57,7 +57,16 @@ export const initialState: AppState = {
 };
 
 export const loadPersistedState = (): Partial<AppState> => {
-  if (typeof window === 'undefined') return {};
+  // Return empty state during SSR
+  if (typeof window === 'undefined') {
+    return {
+      darkMode: false,
+      performanceMode: false,
+      filters: { attributes: {} },
+      itemsPerPage: 10,
+      sortOption: 'newest'
+    };
+  }
 
   try {
     const persistedState: Partial<AppState> = {};
@@ -90,7 +99,13 @@ export const loadPersistedState = (): Partial<AppState> => {
     return persistedState;
   } catch (error) {
     console.error('Failed to load persisted state:', error);
-    return {};
+    return {
+      darkMode: false,
+      performanceMode: false,
+      filters: { attributes: {} },
+      itemsPerPage: 10,
+      sortOption: 'newest'
+    };
   }
 };
 
