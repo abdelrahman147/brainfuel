@@ -33,12 +33,15 @@ export async function POST(request: NextRequest) {
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
 
-    // Calculate the secret key and the hash
-    const secretKey = crypto.createHmac('sha256', 'WebAppData')
+    // Correct secret key calculation
+    const secretKey = crypto
+      .createHmac('sha256', Buffer.from('WebAppData'))
       .update(BOT_TOKEN)
       .digest();
 
-    const calculatedHash = crypto.createHmac('sha256', secretKey)
+    // Correct hash calculation
+    const calculatedHash = crypto
+      .createHmac('sha256', secretKey)
       .update(dataCheckString)
       .digest('hex');
 
