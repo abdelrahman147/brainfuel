@@ -13,6 +13,7 @@ export function InviteSection() {
   const tg = getTelegramWebApp();
   const user = tg?.initDataUnsafe?.user;
   const [referralLink, setReferralLink] = useState('');
+  const [invitedUsers, setInvitedUsers] = useState<{ name: string; photoUrl: string }[]>([]);
   const { language } = useLanguage();
   const lang: 'en' | 'ru' = language === 'ru' ? 'ru' : 'en';
   const t = translations[lang].invite;
@@ -20,10 +21,20 @@ export function InviteSection() {
   useEffect(() => {
     if (typeof window !== 'undefined' && user) {
       setReferralLink(`${BOT_LINK}?startapp=ref_${user.id}`);
+      // Fetch invited users from backend
+      fetch(`/api/referral?referrer_id=${user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.invited && Array.isArray(data.invited)) {
+            setInvitedUsers(data.invited.map((u: any) => ({
+              name: u.invited_name || `ID ${u.invited_id}`,
+              photoUrl: u.invited_photo || '/images/default-avatar.png',
+            })));
+          }
+        })
+        .catch(() => setInvitedUsers([]));
     }
   }, [user]);
-
-  const invitedUsers: { name: string; photoUrl: string }[] = [];
 
   const handleCopy = async () => {
     if (typeof window === 'undefined') return;
