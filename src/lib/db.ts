@@ -307,11 +307,11 @@ export async function listExports(): Promise<{ db: GiftInfo[] }> {
 
     const collections: GiftInfo[] = [];
     for (const table of tables as any[]) {
-      if (!table.table_name) {
+      const tableName = table.TABLE_NAME;
+      if (!tableName) {
         console.warn('Skipping invalid table entry:', table);
         continue;
       }
-      const tableName = table.table_name;
       const [count] = await pool.execute(
         `SELECT COUNT(*) as total FROM \`${tableName}\``
       );
