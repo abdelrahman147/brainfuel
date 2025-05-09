@@ -175,27 +175,35 @@ function ComingSoonSection() {
 function InviteSection() {
   const tg = getTelegramWebApp();
   const user = tg?.initDataUnsafe?.user;
-  const referralLink = typeof window !== 'undefined' && user
-    ? `${window.location.origin}/ref/${user.id}`
-    : 'https://yourapp.com/ref/USERID';
+  const [referralLink, setReferralLink] = useState('https://yourapp.com/ref/USERID');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && user) {
+      setReferralLink(`${window.location.origin}/ref/${user.id}`);
+    }
+  }, [user]);
 
   const invitedUsers: { name: string; photoUrl: string }[] = [];
 
   const handleCopy = async () => {
+    if (typeof window === 'undefined') return;
+    
     try {
       await navigator.clipboard.writeText(referralLink);
-      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.showPopup) {
+      if (tg && typeof (window as any).Telegram?.WebApp?.showPopup === 'function') {
         (window as any).Telegram.WebApp.showPopup({ message: 'Link copied!' });
       }
     } catch {
-      if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.showPopup) {
+      if (tg && typeof (window as any).Telegram?.WebApp?.showPopup === 'function') {
         (window as any).Telegram.WebApp.showPopup({ message: 'Failed to copy link' });
       }
     }
   };
 
   const handleShare = () => {
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.shareLink) {
+    if (typeof window === 'undefined') return;
+
+    if (tg && typeof (window as any).Telegram?.WebApp?.shareLink === 'function') {
       (window as any).Telegram.WebApp.shareLink(referralLink, { title: 'Invite to GiftCatalog' });
     } else if (navigator.share) {
       navigator.share({ title: 'Invite to GiftCatalog', url: referralLink });
