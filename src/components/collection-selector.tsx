@@ -14,6 +14,13 @@ import { useAppState } from '@/lib/state'
 import { listExports, getCollectionData } from '@/lib/api'
 import { toast } from 'sonner'
 
+// Helper to get the image URL for a collection
+function getCollectionImage(name: string, ext: 'jpg' | 'png' = 'jpg') {
+  // Normalize: lowercase, remove spaces and special characters
+  const safeName = name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  return `/Gift Collection Images/${safeName}.${ext}`;
+}
+
 export function CollectionSelector() {
   const { state, dispatch } = useAppState()
   const [isLoading, setIsLoading] = useState(false)
@@ -109,9 +116,23 @@ export function CollectionSelector() {
             <SelectItem
               key={gift.name}
               value={gift.name}
-              className="text-xs"
+              className="text-xs flex items-center"
             >
-              {gift.name} ({gift.total} items)
+              <img
+                src={getCollectionImage(gift.name, 'jpg')}
+                alt={gift.name}
+                className="w-7 h-7 object-contain mr-2 align-middle"
+                style={{ background: 'transparent', border: 'none', boxShadow: 'none', display: 'inline-block', verticalAlign: 'middle' }}
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  if (img.src.endsWith('.jpg')) {
+                    img.src = getCollectionImage(gift.name, 'png');
+                  } else {
+                    img.src = '/images/new-gift-logo.jpg';
+                  }
+                }}
+              />
+              <span className="align-middle">{gift.name} ({gift.total} items)</span>
             </SelectItem>
           ))}
           {state.gifts.length === 0 && (
