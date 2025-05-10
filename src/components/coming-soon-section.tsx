@@ -15,7 +15,7 @@ export function ComingSoonSection() {
   // Handle Telegram channel link click
   const handleChannelClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    const url = 'tg://resolve?domain=Gift_Catalog'
+    const url = 'https://t.me/Gift_Catalog'
     if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
       (window as any).Telegram.WebApp.openLink(url)
     } else {
@@ -69,13 +69,13 @@ export function ComingSoonSection() {
           </p>
           <div className="flex justify-between mt-4 items-center">
             <a
-              href="tg://resolve?domain=yousefmsm1"
+              href="https://t.me/yousefmsm1"
               onClick={(e) => {
                 e.preventDefault()
                 if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
-                  (window as any).Telegram.WebApp.openLink('tg://resolve?domain=yousefmsm1')
+                  (window as any).Telegram.WebApp.openLink('https://t.me/yousefmsm1')
                 } else {
-                  window.open('tg://resolve?domain=yousefmsm1', '_blank')
+                  window.open('https://t.me/yousefmsm1', '_blank')
                 }
               }}
               className="text-xs text-purple-500 hover:underline transition-all duration-300 hover:text-purple-600"
@@ -103,7 +103,7 @@ export function ComingSoonSection() {
         <div className="flex flex-col items-center">
           <h3 className="text-lg font-semibold mb-4">{t.stayUpdated}</h3>
           <a
-            href="tg://resolve?domain=Gift_Catalog"
+            href="https://t.me/Gift_Catalog"
             onClick={handleChannelClick}
             className="flex items-center justify-center w-full sm:w-auto bg-amber-500 hover:bg-amber-600 dark:bg-purple-600 dark:hover:bg-purple-700 transition-all duration-300 rounded-lg py-3 px-6 text-sm font-medium text-white transform hover:scale-105"
           >

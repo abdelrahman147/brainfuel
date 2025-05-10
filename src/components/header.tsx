@@ -20,7 +20,7 @@ export function Header() {
   // Handle Telegram link click
   const handleTelegramChannelClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    const url = "tg://resolve?domain=Gift_Catalog"
+    const url = "https://t.me/Gift_Catalog"
 
     // Use Telegram's openLink method if available to prevent mini app from closing
     if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
@@ -55,7 +55,7 @@ export function Header() {
             />
           </div>
           <a
-            href="tg://resolve?domain=Gift_Catalog"
+            href="https://t.me/Gift_Catalog"
             onClick={handleTelegramChannelClick}
             className="text-lg md:text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-500 dark:from-purple-400 dark:to-indigo-300 bg-clip-text text-transparent dark:glow-text hover:opacity-80 transition-all duration-300 transform hover:scale-105 cursor-pointer"
           >
