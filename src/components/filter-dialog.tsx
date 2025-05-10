@@ -300,7 +300,7 @@ export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
             <Button
               onClick={applyFilters}
               disabled={isApplying || Object.keys(selectedAttributes).length === 0}
-              className="w-full bg-accent text-accent-foreground hover:bg-accent/80 dark:bg-[#1f1f20] dark:text-[#FFFFFF] dark:hover:bg-[#1c1c1d]"
+              className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md hover:from-purple-600 hover:to-indigo-600"
             >
               Apply Filters {filteredCount !== null && !isCountLoading && `(${filteredCount} gifts)`}
             </Button>

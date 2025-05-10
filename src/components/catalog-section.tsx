@@ -188,7 +188,7 @@ export function CatalogSection() {
           <ItemsPerPage />
         </div>
         <div className="w-full md:w-auto flex flex-col gap-2 flex-1">
-          <Button onClick={() => setFilterDialogOpen(true)}>
+          <Button onClick={() => setFilterDialogOpen(true)} className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md hover:from-purple-600 hover:to-indigo-600">
             Filters {totalFilterValues > 0 ? `(${totalFilterValues})` : ''}
           </Button>
           <FilterDialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen} />

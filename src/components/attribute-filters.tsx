@@ -192,7 +192,7 @@ export function AttributeFilters() {
           size="sm"
           onClick={applyGiftId}
           disabled={isLoading}
-          className="h-[40px] px-5 rounded-lg bg-black text-white dark:bg-white dark:text-black font-semibold text-xs shadow-sm hover:bg-gray-900 dark:hover:bg-gray-200 transition"
+          className="h-[40px] px-5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-semibold text-xs shadow-sm hover:from-purple-600 hover:to-indigo-600 transition"
         >
           Go
         </Button>
