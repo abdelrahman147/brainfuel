@@ -6,6 +6,7 @@ import duckAnimation from '../../duck_invitation.json'
 import { LottiePlayer } from './LottiePlayer'
 import { useLanguage } from './app-provider'
 import { translations } from '@/lib/translations'
+import { Share2 } from 'lucide-react'
 
 const BOT_LINK = 'https://t.me/GiftCatalog_bot';
 
@@ -60,7 +61,7 @@ export function InviteSection() {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in space-y-6">
       <div className="flex flex-col items-center justify-center mt-4 mb-2">
         <div className="w-32 h-32">
           <LottiePlayer
@@ -99,9 +100,7 @@ export function InviteSection() {
           onClick={handleShare}
           className="flex items-center justify-center w-full sm:w-auto bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700 transition-all duration-300 rounded-lg py-3 px-6 text-sm font-medium text-white transform hover:scale-105"
         >
-          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
-          </svg>
+          <Share2 className="w-5 h-5 mr-2" />
           {t.share}
         </button>
       </div>

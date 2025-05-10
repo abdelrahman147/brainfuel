@@ -6,6 +6,7 @@ import { LottiePlayer } from './LottiePlayer'
 import duckAnimation from '../../donation page duck.json'
 import { useLanguage } from './app-provider'
 import { translations } from '@/lib/translations'
+import { Heart, Link, MessageCircle } from 'lucide-react'
 
 const TON_WALLET = process.env.NEXT_PUBLIC_TON_WALLET_ADDRESS || process.env.TON_WALLET_ADDRESS || '';
 
@@ -61,9 +62,7 @@ export function DonationSection() {
       <div className="bg-white dark:bg-card border border-border rounded-xl shadow-md p-6 w-full max-w-md flex flex-col items-center">
         <div className="flex items-center mb-2">
           <span className="mr-2 text-xl animate-pump-heart" style={{ display: 'inline-block' }}>
-            <svg className="w-7 h-7 text-red-500" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-            </svg>
+            <Heart className="w-7 h-7 text-red-500" />
           </span>
           <span className="font-bold text-lg">{t.support}</span>
         </div>
@@ -91,13 +90,15 @@ export function DonationSection() {
           onClick={handleChannel}
           className="w-full flex items-center justify-center bg-accent text-accent-foreground hover:bg-accent/80 transition-colors rounded-lg py-3 text-sm font-medium"
         >
-          <span className="mr-2">🔗</span> {t.follow}
+          <Link className="w-5 h-5 mr-2" />
+          {t.follow}
         </button>
         <button
           onClick={handleContact}
           className="w-full flex items-center justify-center bg-muted/20 dark:bg-muted/10 text-foreground dark:text-foreground hover:bg-muted/30 dark:hover:bg-muted/20 transition-colors rounded-lg py-3 text-sm font-medium"
         >
-          <span className="mr-2">💬</span> {t.contact}
+          <MessageCircle className="w-5 h-5 mr-2" />
+          {t.contact}
         </button>
       </div>
       <style jsx global>{`

@@ -5,7 +5,7 @@ import { useAppState } from '@/lib/state'
 import { getTelegramWebApp } from '@/lib/telegram'
 import type { Item } from '@/lib/db'
 import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
+import { X, Send } from 'lucide-react'
 import { useTheme } from 'next-themes'
 
 interface ItemModalProps {
@@ -102,37 +102,8 @@ export function ItemModal({ item, onClose }: ItemModalProps) {
   }
 
   return (
-    <div
-      onClick={handleBackdropClick}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: colors.backdrop,
-        zIndex: 9999,
-        opacity: closing ? 0 : 1,
-        transition: 'opacity 300ms ease',
-        overflowY: 'auto',
-        WebkitOverflowScrolling: 'touch'
-      }}
-    >
-      <div
-        ref={modalRef}
-        style={{
-          backgroundColor: colors.background,
-          margin: '16px',
-          marginTop: closing ? '40px' : '16px',
-          borderRadius: '16px',
-          overflow: 'hidden',
-          position: 'relative',
-          boxShadow: colors.shadow,
-          transition: 'all 300ms ease',
-          transform: closing ? 'scale(0.9)' : 'scale(1)',
-          opacity: closing ? 0 : 1
-        }}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col animate-scale-in">
         {/* Close button */}
         <button
           onClick={closeWithAnimation}
@@ -299,9 +270,7 @@ export function ItemModal({ item, onClose }: ItemModalProps) {
               }
             }}
           >
-            <svg style={{ marginRight: '8px', width: '18px', height: '18px' }} fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20.665,3.717l-17.73,6.837c-1.21,0.486-1.203,1.161-0.222,1.462l4.552,1.42l10.532-6.645c0.498-0.303,0.953-0.14,0.579,0.192l-8.533,7.701l0,0l0,0H9.841l0.002,0.001l-0.314,4.692c0.46,0,0.663-0.211,0.921-0.46l2.211-2.15l4.599,3.397c0.848,0.467,1.457,0.227,1.668-0.785l3.019-14.228c0.309-1.239-0.473-1.8-1.282-1.434z" />
-            </svg>
+            <Send className="w-5 h-5 mr-2" />
             Open in Telegram
           </Button>
         </div>
