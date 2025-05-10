@@ -8,7 +8,7 @@ import { useLanguage } from './app-provider'
 import { translations } from '@/lib/translations'
 import { Share2 } from 'lucide-react'
 
-const BOT_LINK = 'https://t.me/GiftCatalog_bot';
+const BOT_LINK = 'tg://resolve?domain=GiftCatalog_bot';
 
 export function InviteSection() {
   const tg = getTelegramWebApp();

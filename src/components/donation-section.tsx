@@ -31,7 +31,7 @@ export function DonationSection() {
   }
 
   const handleChannel = () => {
-    const url = 'https://t.me/GiftCatlog'
+    const url = 'tg://resolve?domain=Gift_Catalog'
     if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
       (window as any).Telegram.WebApp.openLink(url)
     } else {
@@ -40,7 +40,7 @@ export function DonationSection() {
   }
 
   const handleContact = () => {
-    const url = 'https://t.me/yousefmsm1'
+    const url = 'tg://resolve?domain=yousefmsm1'
     if (tg && typeof (window as any).Telegram?.WebApp?.openLink === 'function') {
       (window as any).Telegram.WebApp.openLink(url)
     } else {
