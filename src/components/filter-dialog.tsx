@@ -38,7 +38,9 @@ export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
       return `https://gifts.coffin.meme/${collection}/${encoded}.png`
     }
     if (traitType.toLowerCase() === 'symbol') {
-      return `https://gifts.coffin.meme/patterns/${encoded}.tgs?v=3`
+      // Convert the value to lowercase and remove spaces for the filename
+      const filename = value.toLowerCase().replace(/\s+/g, '')
+      return `/pattern filter/${filename}.png`
     }
     return ''
   }
@@ -288,10 +290,12 @@ export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
                         htmlFor={`${traitType}-${value}`}
                         className="ml-2 text-sm font-medium text-gray-700 dark:text-[#FFFFFF]/90 flex-grow flex items-center gap-2"
                       >
-                        {(['Model','Symbol'].includes(traitType) && (
+                        {(['Model','Symbol'].includes(traitType)) && (
                           <img src={getPreviewUrl(traitType, value)} alt={value} className="w-4 h-4 object-contain" />
-                        ))}
-                        <span className="inline-block w-5 h-5 rounded-full border border-gray-300 mr-2" style={{ background: getBackdropColor(value) }} />
+                        )}
+                        {traitType === 'Backdrop' && (
+                          <span className="inline-block w-5 h-5 rounded-full border border-gray-300 mr-2" style={{ background: getBackdropColor(value) }} />
+                        )}
                         {value} ({percentage}%)
                       </label>
                     </div>

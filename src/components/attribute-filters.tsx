@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { getCollectionData } from '@/lib/api'
 import { toast } from 'sonner'
+import backdrops from '../../backdrops.json'
 
 const encode = encodeURIComponent
 
@@ -14,18 +15,32 @@ const formatGiftName = (name: string): string => {
 }
 
 // Get preview URL for Model, Symbol, Backdrop
-const getPreviewUrl = (trait: string, value: string, state: any) => {
+const getPreviewUrl = (trait: string, value: string) => {
+  const { state } = useAppState()
   if (!state.collectionData?.giftName) return ''
+  
   const collection = formatGiftName(state.collectionData.giftName)
   const encodedValue = encode(value)
+
+  // Extract ID from the value if it exists
+  const extractId = (val: string): string => {
+    const parts = val.split('#')
+    return parts.length > 1 ? parts[1].trim() : '1' // Default to 1 if no ID found
+  }
+
+  const itemId = extractId(value)
+
+  // Use the same URL pattern as ItemCard with collection name and ID
   if (trait.toLowerCase() === 'model') {
-    return `https://nft.fragment.com/gift/${collection}-${encodedValue}.webp`
+    return `https://nft.fragment.com/gift/${collection}-${itemId}.webp`
   }
   if (trait.toLowerCase() === 'symbol') {
-    return `https://nft.fragment.com/gift/${collection}-${encodedValue}.webp`
+    // Convert the value to lowercase and remove spaces for the filename
+    const filename = value.toLowerCase().replace(/\s+/g, '')
+    return `/pattern filter/${filename}.png`
   }
   if (trait.toLowerCase() === 'backdrop') {
-    return `https://nft.fragment.com/gift/${collection}-${encodedValue}.webp`
+    return `https://nft.fragment.com/gift/${collection}-${itemId}.webp`
   }
   return ''
 }
@@ -41,6 +56,12 @@ const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, trai
   } else if (target.src.endsWith('.jpg')) {
     target.src = `https://nft.fragment.com/gift/${collection}-${encodedValue}.png`
   }
+}
+
+// Helper to get the center color for a backdrop name
+function getBackdropColor(name: string) {
+  const found = backdrops.find(b => b.name.toLowerCase() === name.toLowerCase());
+  return found ? found.hex.centerColor : '#ccc';
 }
 
 export function AttributeFilters() {
@@ -121,7 +142,7 @@ export function AttributeFilters() {
               {traitOptions('Model').map((opt) => (
                 <SelectItem key={opt} value={opt}>
                   <div className="flex items-center gap-2">
-                    <img src={getPreviewUrl('Model', opt, state)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Model', opt, state)} />
+                    <img src={getPreviewUrl('Model', opt)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Model', opt, state)} />
                     {opt}
                   </div>
                 </SelectItem>
@@ -146,7 +167,7 @@ export function AttributeFilters() {
               {traitOptions('Backdrop').map((opt) => (
                 <SelectItem key={opt} value={opt}>
                   <div className="flex items-center gap-2">
-                    <img src={getPreviewUrl('Backdrop', opt, state)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Backdrop', opt, state)} />
+                    <span className="inline-block w-5 h-5 rounded-full border border-gray-300 mr-2" style={{ background: getBackdropColor(opt) }} />
                     {opt}
                   </div>
                 </SelectItem>
@@ -171,7 +192,7 @@ export function AttributeFilters() {
               {traitOptions('Symbol').map((opt) => (
                 <SelectItem key={opt} value={opt}>
                   <div className="flex items-center gap-2">
-                    <img src={getPreviewUrl('Symbol', opt, state)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Symbol', opt, state)} />
+                    <img src={getPreviewUrl('Symbol', opt)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Symbol', opt, state)} />
                     {opt}
                   </div>
                 </SelectItem>
