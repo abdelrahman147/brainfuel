@@ -84,6 +84,11 @@ export type AttributeWithPercentage = {
   };
 };
 
+export type Gift = {
+  name: string;
+  total: number;
+};
+
 /**
  * Connect to the MySQL database (legacy method, use with caution)
  * @deprecated Use getConnectionPool() instead for better performance

@@ -99,7 +99,7 @@ export function InviteSection() {
         </div>
         <button
           onClick={handleShare}
-          className="flex items-center justify-center w-full bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700 transition-all duration-300 rounded-lg py-3 px-6 text-sm font-medium text-white transform hover:scale-105"
+          className="flex items-center justify-center w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md hover:from-purple-600 hover:to-indigo-600 transition-all duration-300 rounded-lg py-3 px-6 text-sm font-medium transform hover:scale-105"
         >
           <Share2 className="w-5 h-5 mr-2" />
           {t.share}

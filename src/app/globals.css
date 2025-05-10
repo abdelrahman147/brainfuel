@@ -264,3 +264,11 @@ a, button, .card, .btn, .interactive {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+body.modal-open {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100vw;
+  left: 0;
+  top: 0;
+}

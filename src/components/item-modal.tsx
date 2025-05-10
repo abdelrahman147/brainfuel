@@ -58,7 +58,9 @@ export function ItemModal({ item, onClose }: ItemModalProps) {
 
   useEffect(() => {
     setIsClient(true)
-    document.body.style.overflow = 'hidden'
+    const scrollY = window.scrollY
+    document.body.classList.add('modal-open')
+    document.body.style.top = `-${scrollY}px`
 
     // Show Telegram back button
     tg.BackButton.show()
@@ -73,7 +75,9 @@ export function ItemModal({ item, onClose }: ItemModalProps) {
     window.addEventListener('keydown', handleEscape)
 
     return () => {
-      document.body.style.overflow = ''
+      document.body.classList.remove('modal-open')
+      document.body.style.top = ''
+      window.scrollTo(0, scrollY)
       tg.BackButton.hide()
       tg.BackButton.offClick(closeWithAnimation)
       window.removeEventListener('keydown', handleEscape)
@@ -103,7 +107,7 @@ export function ItemModal({ item, onClose }: ItemModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col animate-scale-in">
+      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-hidden flex flex-col animate-scale-in relative">
         {/* Close button */}
         <button
           onClick={closeWithAnimation}
@@ -136,12 +140,15 @@ export function ItemModal({ item, onClose }: ItemModalProps) {
           <X size={18} color="white" />
         </button>
 
-        {/* Header */}
+        {/* Header (fixed) */}
         <div style={{
           padding: '16px',
           paddingRight: '44px',
           borderBottom: `1px solid ${colors.border}`,
-          backgroundColor: colors.headerBg
+          backgroundColor: colors.headerBg,
+          position: 'sticky',
+          top: 0,
+          zIndex: 1
         }}>
           <h2 style={{
             margin: 0,
@@ -151,110 +158,121 @@ export function ItemModal({ item, onClose }: ItemModalProps) {
           }}>{item.name}</h2>
         </div>
 
-        {/* Image */}
+        {/* Scrollable content */}
         <div style={{
-          padding: '16px',
-          backgroundColor: colors.sectionBg
+          flex: 1,
+          overflowY: 'auto',
+          minHeight: 0,
+          background: colors.background
         }}>
+          {/* Image */}
           <div style={{
-            aspectRatio: '1/1',
-            backgroundColor: colors.cardBg,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            boxShadow: isDarkMode ? 'none' : '0 1px 3px rgba(0,0,0,0.08)',
-            border: isDarkMode ? `1px solid ${colors.border}` : 'none'
-          }}>
-            <img
-              src={imageUrl}
-              alt={item.name}
-              style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
-                objectFit: 'contain'
-              }}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement
-                if (target.src.endsWith('.webp')) {
-                  target.src = `https://nft.fragment.com/gift/${giftName}-${itemNumber}.jpg`
-                } else if (target.src.endsWith('.jpg')) {
-                  target.src = `https://nft.fragment.com/gift/${giftName}-${itemNumber}.png`
-                }
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Attributes */}
-        <div style={{
-          padding: '16px',
-          backgroundColor: colors.background
-        }}>
-          <div style={{
-            borderRadius: '12px',
-            overflow: 'hidden',
-            border: `1px solid ${colors.border}`
+            padding: '16px',
+            backgroundColor: colors.sectionBg
           }}>
             <div style={{
+              aspectRatio: '1/1',
+              backgroundColor: colors.cardBg,
               display: 'flex',
-              padding: '12px',
-              backgroundColor: colors.attributeBg,
-              borderBottom: `1px solid ${colors.border}`
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              boxShadow: isDarkMode ? 'none' : '0 1px 3px rgba(0,0,0,0.08)',
+              border: isDarkMode ? `1px solid ${colors.border}` : 'none'
+            }}>
+              <img
+                src={imageUrl}
+                alt={item.name}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain'
+                }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  if (target.src.endsWith('.webp')) {
+                    target.src = `https://nft.fragment.com/gift/${giftName}-${itemNumber}.jpg`
+                  } else if (target.src.endsWith('.jpg')) {
+                    target.src = `https://nft.fragment.com/gift/${giftName}-${itemNumber}.png`
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Attributes */}
+          <div style={{
+            padding: '16px',
+            backgroundColor: colors.background
+          }}>
+            <div style={{
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: `1px solid ${colors.border}`
             }}>
               <div style={{
-                width: '40%',
-                fontWeight: '600',
-                fontSize: '14px',
-                color: colors.text
-              }}>ID</div>
-              <div style={{
-                width: '60%',
-                fontSize: '14px',
-                color: colors.textSecondary
-              }}>{item.id}</div>
-            </div>
-
-            {item.attributes?.map((attr, index) => (
-              <div
-                key={index}
-                style={{
-                  display: 'flex',
-                  padding: '12px',
-                  borderBottom: index < (item.attributes?.length || 0) - 1 ? `1px solid ${colors.border}` : 'none'
-                }}
-              >
+                display: 'flex',
+                padding: '12px',
+                backgroundColor: colors.attributeBg,
+                borderBottom: `1px solid ${colors.border}`
+              }}>
                 <div style={{
                   width: '40%',
                   fontWeight: '600',
                   fontSize: '14px',
                   color: colors.text
-                }}>
-                  {attr.trait_type}
-                </div>
+                }}>ID</div>
                 <div style={{
                   width: '60%',
                   fontSize: '14px',
                   color: colors.textSecondary
-                }}>
-                  {attr.value}
-                </div>
+                }}>{item.id}</div>
               </div>
-            ))}
+
+              {item.attributes?.map((attr, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: 'flex',
+                    padding: '12px',
+                    borderBottom: index < (item.attributes?.length || 0) - 1 ? `1px solid ${colors.border}` : 'none'
+                  }}
+                >
+                  <div style={{
+                    width: '40%',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    color: colors.text
+                  }}>
+                    {attr.trait_type}
+                  </div>
+                  <div style={{
+                    width: '60%',
+                    fontSize: '14px',
+                    color: colors.textSecondary
+                  }}>
+                    {attr.value}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer (fixed) */}
         <div style={{
           padding: '16px',
           borderTop: `1px solid ${colors.border}`,
-          backgroundColor: colors.background
+          backgroundColor: colors.background,
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 1
         }}>
           <Button
             className="w-full"
             style={{
-              backgroundColor: colors.buttonBg,
+              background: 'linear-gradient(to right, #a855f7, #6366f1)',
               color: 'white',
               height: '48px',
               fontSize: '15px',
