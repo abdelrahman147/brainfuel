@@ -73,18 +73,18 @@ export function InviteSection() {
           />
         </div>
         <h2 className="text-2xl font-bold text-foreground mt-4 mb-2">{t.inviteFriends}</h2>
-        <p className="text-muted-foreground text-center max-w-lg mb-4">
+        <p className="text-muted-foreground text-center max-w-2xl mb-4">
           {t.inviteText}
         </p>
       </div>
-      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 flex flex-col items-center">
+      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 flex flex-col items-center w-full max-w-2xl">
         <h3 className="text-lg font-semibold mb-4">{t.referral}</h3>
-        <div className="w-full max-w-md flex items-center space-x-2 mb-4">
+        <div className="w-full flex items-center space-x-2 mb-4">
           <input
             type="text"
             readOnly
             value={referralLink}
-            className="flex-1 bg-transparent p-2 rounded-lg text-sm text-foreground border border-border dark:border-border/30 focus:outline-none"
+            className="flex-1 bg-transparent p-2 rounded-lg text-sm text-foreground border border-border dark:border-border/30 focus:outline-none w-full"
           />
           <button
             onClick={handleCopy}
@@ -98,16 +98,16 @@ export function InviteSection() {
         </div>
         <button
           onClick={handleShare}
-          className="flex items-center justify-center w-full sm:w-auto bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700 transition-all duration-300 rounded-lg py-3 px-6 text-sm font-medium text-white transform hover:scale-105"
+          className="flex items-center justify-center w-full bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700 transition-all duration-300 rounded-lg py-3 px-6 text-sm font-medium text-white transform hover:scale-105"
         >
           <Share2 className="w-5 h-5 mr-2" />
           {t.share}
         </button>
       </div>
-      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 flex flex-col items-center">
+      <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 flex flex-col items-center w-full max-w-2xl">
         <h3 className="text-lg font-semibold mb-4">{t.invited}</h3>
         {invitedUsers.length > 0 ? (
-          <div className="w-full max-w-md space-y-4">
+          <div className="w-full space-y-4">
             {invitedUsers.map((user, index) => (
               <div
                 key={index}
