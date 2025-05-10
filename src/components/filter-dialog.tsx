@@ -6,11 +6,18 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button'
 import { getItems, getAttributes, getCollectionData } from '@/lib/api'
 import { toast } from 'sonner'
+import backdrops from '../../backdrops.json'
 const enc = encodeURIComponent
 
 interface FilterDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+}
+
+// Helper to get the center color for a backdrop name
+function getBackdropColor(name: string) {
+  const found = backdrops.find(b => b.name.toLowerCase() === name.toLowerCase());
+  return found ? found.hex.centerColor : '#ccc';
 }
 
 export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
@@ -284,6 +291,7 @@ export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
                         {(['Model','Symbol'].includes(traitType) && (
                           <img src={getPreviewUrl(traitType, value)} alt={value} className="w-4 h-4 object-contain" />
                         ))}
+                        <span className="inline-block w-5 h-5 rounded-full border border-gray-300 mr-2" style={{ background: getBackdropColor(value) }} />
                         {value} ({percentage}%)
                       </label>
                     </div>
