@@ -9,14 +9,19 @@ import backdrops from '../../backdrops.json'
 
 const encode = encodeURIComponent
 
+// Helper to get the center color for a backdrop name
+function getBackdropColor(name: string) {
+  const found = backdrops.find(b => b.name.toLowerCase() === name.toLowerCase());
+  return found ? found.hex.centerColor : '#ccc';
+}
+
 // Format gift name: trim, lowercase, remove spaces
 const formatGiftName = (name: string): string => {
   return name.trim().toLowerCase().replace(/\s+/g, '')
 }
 
 // Get preview URL for Model, Symbol, Backdrop
-const getPreviewUrl = (trait: string, value: string) => {
-  const { state } = useAppState()
+const getPreviewUrl = (trait: string, value: string, state: any) => {
   if (!state.collectionData?.giftName) return ''
   
   const collection = formatGiftName(state.collectionData.giftName)
@@ -56,12 +61,6 @@ const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>, trai
   } else if (target.src.endsWith('.jpg')) {
     target.src = `https://nft.fragment.com/gift/${collection}-${encodedValue}.png`
   }
-}
-
-// Helper to get the center color for a backdrop name
-function getBackdropColor(name: string) {
-  const found = backdrops.find(b => b.name.toLowerCase() === name.toLowerCase());
-  return found ? found.hex.centerColor : '#ccc';
 }
 
 export function AttributeFilters() {
@@ -142,7 +141,7 @@ export function AttributeFilters() {
               {traitOptions('Model').map((opt) => (
                 <SelectItem key={opt} value={opt}>
                   <div className="flex items-center gap-2">
-                    <img src={getPreviewUrl('Model', opt)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Model', opt, state)} />
+                    <img src={getPreviewUrl('Model', opt, state)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Model', opt, state)} />
                     {opt}
                   </div>
                 </SelectItem>
@@ -192,7 +191,7 @@ export function AttributeFilters() {
               {traitOptions('Symbol').map((opt) => (
                 <SelectItem key={opt} value={opt}>
                   <div className="flex items-center gap-2">
-                    <img src={getPreviewUrl('Symbol', opt)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Symbol', opt, state)} />
+                    <img src={getPreviewUrl('Symbol', opt, state)} alt={opt} className="w-5 h-5 object-contain" onError={e => handleImageError(e, 'Symbol', opt, state)} />
                     {opt}
                   </div>
                 </SelectItem>
