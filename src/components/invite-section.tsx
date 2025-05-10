@@ -6,7 +6,7 @@ import duckAnimation from '../../duck_invitation.json'
 import { LottiePlayer } from './LottiePlayer'
 import { useLanguage } from './app-provider'
 import { translations } from '@/lib/translations'
-import { Share2 } from 'lucide-react'
+import { Share2, ChevronDown, ChevronUp } from 'lucide-react'
 
 const BOT_LINK = 'https://t.me/GiftCatalog_bot';
 
@@ -18,6 +18,7 @@ export function InviteSection() {
   const { language } = useLanguage();
   const lang: 'en' | 'ru' = language === 'ru' ? 'ru' : 'en';
   const t = translations[lang].invite;
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && user) {
@@ -107,25 +108,36 @@ export function InviteSection() {
       <div className="bg-card border border-border dark:border-border/30 rounded-xl shadow-md p-6 flex flex-col items-center w-full max-w-2xl">
         <h3 className="text-lg font-semibold mb-4">{t.invited}</h3>
         {invitedUsers.length > 0 ? (
-          <div className="w-full space-y-4">
-            {invitedUsers.map((user, index) => (
-              <div
-                key={index}
-                className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700 shadow hover:scale-105 transition-transform"
+          <>
+            <div className="w-full space-y-4">
+              {(showAll ? invitedUsers : invitedUsers.slice(-3)).map((user, index) => (
+                <div
+                  key={index}
+                  className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-lg border border-purple-200 dark:border-purple-700 shadow hover:scale-105 transition-transform"
+                >
+                  <img
+                    src={
+                      user.photoUrl && user.photoUrl.length > 10
+                        ? `/api/telegram-photo?file_id=${user.photoUrl}`
+                        : '/images/default-avatar.png'
+                    }
+                    alt={user.name}
+                    className="w-10 h-10 rounded-full border-2 border-purple-400 shadow-md"
+                  />
+                  <span className="text-base font-semibold text-foreground">{user.name}</span>
+                </div>
+              ))}
+            </div>
+            {invitedUsers.length > 3 && (
+              <button
+                onClick={() => setShowAll((v) => !v)}
+                className="mt-4 flex items-center text-purple-500 hover:text-purple-700 transition-colors text-sm font-medium"
               >
-                <img
-                  src={
-                    user.photoUrl && user.photoUrl.length > 10
-                      ? `/api/telegram-photo?file_id=${user.photoUrl}`
-                      : '/images/default-avatar.png'
-                  }
-                  alt={user.name}
-                  className="w-10 h-10 rounded-full border-2 border-purple-400 shadow-md"
-                />
-                <span className="text-base font-semibold text-foreground">{user.name}</span>
-              </div>
-            ))}
-          </div>
+                {showAll ? <ChevronUp className="w-5 h-5 mr-1" /> : <ChevronDown className="w-5 h-5 mr-1" />}
+                {showAll ? (language === 'ru' ? 'Скрыть' : 'Show Less') : (language === 'ru' ? 'Показать всех' : 'Show All')}
+              </button>
+            )}
+          </>
         ) : (
           <p className="text-muted-foreground text-sm">{t.noInvited}</p>
         )}
