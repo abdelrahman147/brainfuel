@@ -1,4 +1,0 @@
-src/lib/db.ts(127,15): error TS7034: Variable 'valueConditions' implicitly has type 'any[]' in some locations where its type cannot be determined.
-src/lib/db.ts(140,69): error TS7005: Variable 'valueConditions' implicitly has an 'any[]' type.
-src/lib/db.ts(159,15): error TS7034: Variable 'valueConditions' implicitly has type 'any[]' in some locations where its type cannot be determined.
-src/lib/db.ts(169,70): error TS7005: Variable 'valueConditions' implicitly has an 'any[]' type.
