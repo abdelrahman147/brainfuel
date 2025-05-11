@@ -9,6 +9,7 @@ import { getCollectionData } from '@/lib/api'
 import { toast } from 'sonner'
 import { useLanguage } from './app-provider'
 import { translations } from '@/lib/translations'
+import { useCollectionData } from '@/hooks/use-collection-data'
 
 export function Header() {
   const { state } = useAppState()
@@ -16,6 +17,17 @@ export function Header() {
   const lang: 'en' | 'ru' = language === 'ru' ? 'ru' : 'en'
   const t = translations[lang].header
   const tg = getTelegramWebApp()
+
+  // Use SWR for collection data
+  const { mutate: mutateCollectionData } = useCollectionData({
+    giftName: state.collectionData?.giftName,
+    page: 1,
+    limit: state.itemsPerPage,
+    filters: state.filters,
+    sort: state.sortOption,
+    includeAttributes: true,
+    enabled: Boolean(state.collectionData?.giftName),
+  })
 
   // Handle Telegram link click
   const handleTelegramChannelClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -34,7 +46,7 @@ export function Header() {
   // Refresh handler
   const handleRefresh = async () => {
     try {
-      if(state.collectionData?.giftName){await getCollectionData(state.collectionData.giftName,1,state.itemsPerPage,state.filters,state.sortOption,true)}
+      await mutateCollectionData()
       toast.success('Data refreshed!')
     } catch (err) {
       toast.error('Failed to refresh data.')

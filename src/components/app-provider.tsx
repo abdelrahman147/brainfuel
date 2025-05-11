@@ -74,6 +74,21 @@ export function AppProvider({ children }: AppProviderProps) {
     }
   }
 
+  // Fetch collections list after hydration
+  useEffect(() => {
+    if (!hydrated) return;
+    (async () => {
+      try {
+        const result = await import('@/lib/api').then(mod => mod.listExports());
+        if (result && result.db) {
+          dispatch({ type: 'SET_GIFTS', payload: result.db });
+        }
+      } catch (error) {
+        console.error('Failed to load collections list:', error);
+      }
+    })();
+  }, [hydrated]);
+
   // This ensures that the UI doesn't flicker before the client-side state is loaded
   if (!hydrated) {
     // Return a placeholder or null while we wait for hydration

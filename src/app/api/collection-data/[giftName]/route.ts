@@ -4,10 +4,10 @@ import { getItems, getAttributes, getStats } from '@/lib/db';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function GET(
   request: NextRequest,
-  { params }: any
+  context: any
 ) {
   try {
-    const { giftName } = params;
+    const { giftName } = await context.params;
     const searchParams = request.nextUrl.searchParams;
 
     // Parse query parameters
@@ -50,17 +50,17 @@ export async function GET(
       stats: statsResult
     });
   } catch (error) {
-    console.error(`Error fetching collection data for ${params.giftName}:`, error);
+    console.error(`Error fetching collection data for ${context.params.giftName}:`, error);
 
     if ((error as Error).message.includes('not found')) {
       return NextResponse.json(
-        { error: `No database found for ${params.giftName}` },
+        { error: `No database found for ${context.params.giftName}` },
         { status: 404 }
       );
     }
 
     return NextResponse.json(
-      { error: `Failed to fetch collection data for ${params.giftName}`, details: (error as Error).message },
+      { error: `Failed to fetch collection data for ${context.params.giftName}`, details: (error as Error).message },
       { status: 500 }
     );
   }

@@ -9,6 +9,7 @@ import { ItemsGrid } from '@/components/items-grid'
 import { getItems, getAttributes, getStats, getCollectionData } from '@/lib/api'
 import { toast } from 'sonner'
 import { FilterDialog } from '@/components/filter-dialog'
+import { useCollectionData } from '@/hooks/use-collection-data'
 
 export function CatalogSection() {
   const { state, dispatch } = useAppState()
@@ -29,47 +30,25 @@ export function CatalogSection() {
     ([trait, values]) => values.map(value => ({ trait, value }))
   )
 
+  // Use SWR for collection data
+  const { mutate: mutateCollectionData } = useCollectionData({
+    giftName: state.collectionData?.giftName,
+    page: 1,
+    limit: state.itemsPerPage,
+    filters: { attributes: {} },
+    sort: state.sortOption,
+    includeAttributes: true,
+    enabled: Boolean(state.collectionData?.giftName),
+  })
+
   const handleRefresh = async () => {
     if (!state.collectionData?.giftName) return
-
-    setIsLoading(true)
     try {
-      // Clear filters
-      dispatch({ type: 'SET_FILTERS', payload: { attributes: {} } })
-
-      // Load collection data - using optimized endpoint
-      const result = await getCollectionData(
-        state.collectionData.giftName,
-        1,
-        state.itemsPerPage,
-        { attributes: {} },
-        state.sortOption,
-        true
-      )
-
-      // Update collection data
-      dispatch({
-        type: 'SET_COLLECTION_DATA',
-        payload: result.collectionData,
-      })
-
-      // Reset current page
-      dispatch({ type: 'SET_CURRENT_PAGE', payload: 1 })
-
-      // Set attributes
-      if (Object.keys(result.attributes).length > 0) {
-        dispatch({
-          type: 'SET_ATTRIBUTES_WITH_PERCENTAGES',
-          payload: result.attributes,
-        })
-      }
-
+      await mutateCollectionData()
       toast.success(`Refreshed items for "${state.collectionData.giftName}"`)
     } catch (error) {
       console.error(`Error refreshing items for ${state.collectionData?.giftName}:`, error)
       toast.error(`Failed to refresh items: ${(error as Error).message}`)
-    } finally {
-      setIsLoading(false)
     }
   }
 

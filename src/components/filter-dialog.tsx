@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { getItems, getAttributes, getCollectionData } from '@/lib/api'
 import { toast } from 'sonner'
 import backdrops from '../../backdrops.json'
+import useSWR from 'swr'
 const enc = encodeURIComponent
 
 interface FilterDialogProps {
@@ -27,8 +28,6 @@ export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
   )
   const [isApplying, setIsApplying] = useState(false)
   const [isLoadingAttributes, setIsLoadingAttributes] = useState(false)
-  const [filteredCount, setFilteredCount] = useState<number | null>(null)
-  const [isCountLoading, setIsCountLoading] = useState(false)
 
   const getPreviewUrl = (traitType: string, value: string) => {
     if (!state.collectionData?.giftName) return ''
@@ -50,66 +49,40 @@ export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
     setSelectedAttributes({ ...state.filters.attributes })
   }, [state.filters.attributes])
 
-  // Fetch attributes when the dialog opens
+  // SWR for attributes
+  const { data: swrAttributes, error: swrAttrError, isLoading: swrAttrLoading } = useSWR(
+    open && state.collectionData?.giftName
+      ? ['attributes', state.collectionData.giftName]
+      : null,
+    ([, giftName]) => getAttributes(giftName),
+    { revalidateOnFocus: false, dedupingInterval: 1000 * 30 }
+  )
+
   useEffect(() => {
-    const fetchAttributes = async () => {
-      if (open && state.collectionData?.giftName && Object.keys(state.attributesWithPercentages).length === 0) {
-        setIsLoadingAttributes(true)
-        try {
-          const attributes = await getAttributes(state.collectionData.giftName)
-          dispatch({
-            type: 'SET_ATTRIBUTES_WITH_PERCENTAGES',
-            payload: attributes,
-          })
-        } catch (error) {
-          console.error('Error fetching attributes:', error)
-          toast.error(`Failed to load attributes: ${(error as Error).message}`)
-        } finally {
-          setIsLoadingAttributes(false)
-        }
-      }
+    if (swrAttributes) {
+      dispatch({ type: 'SET_ATTRIBUTES_WITH_PERCENTAGES', payload: swrAttributes })
     }
+    if (swrAttrError) {
+      toast.error(`Failed to load attributes: ${swrAttrError.message}`)
+    }
+  }, [swrAttributes, swrAttrError, dispatch])
 
-    fetchAttributes()
-  }, [open, state.collectionData?.giftName, state.attributesWithPercentages, dispatch])
-
-  // Get a preview count of items when filters change
-  useEffect(() => {
-    const previewFilteredCount = async () => {
-      if (!state.collectionData?.giftName || !open || Object.keys(selectedAttributes).length === 0) {
-        setFilteredCount(null)
-        return
-      }
-
-      setIsCountLoading(true)
-      try {
-        // Do a quick query to get the count of items that match the filters
-        const result = await getItems(
+  // SWR for preview filtered count
+  const { data: swrFilteredCount, isLoading: swrCountLoading } = useSWR(
+    open && state.collectionData?.giftName && Object.keys(selectedAttributes).length > 0
+      ? [
+          'filtered-count',
           state.collectionData.giftName,
-          1, // Page doesn't matter for the count
-          1, // We only need 1 item to get the total count
-          { attributes: selectedAttributes },
-          state.sortOption
-        )
-
-        setFilteredCount(result.totalItems)
-      } catch (error) {
-        console.error('Error getting filtered count:', error)
-        setFilteredCount(null)
-      } finally {
-        setIsCountLoading(false)
-      }
-    }
-
-    // Debounce the preview to avoid too many requests
-    const debounceTimer = setTimeout(() => {
-      previewFilteredCount()
-    }, 500)
-
-    return () => {
-      clearTimeout(debounceTimer)
-    }
-  }, [selectedAttributes, state.collectionData?.giftName, state.sortOption, open])
+          JSON.stringify(selectedAttributes),
+          state.sortOption,
+        ]
+      : null,
+    async ([, giftName, attributes, sort]) => {
+      const result = await getItems(giftName, 1, 1, { attributes: JSON.parse(attributes) }, sort)
+      return result.totalItems
+    },
+    { revalidateOnFocus: false, dedupingInterval: 1000 * 10 }
+  )
 
   // Check if a trait value is selected
   const isSelected = (traitType: string, value: string) => {
@@ -185,7 +158,6 @@ export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
   // Clear all filters using optimized API
   const clearFilters = async () => {
     setSelectedAttributes({})
-    setFilteredCount(null)
 
     if (!state.collectionData?.giftName) return
 
@@ -250,14 +222,14 @@ export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
         </div>
 
         {/* Filtered count info */}
-        {filteredCount !== null && totalSelectedFilters > 0 && (
+        {swrFilteredCount !== null && totalSelectedFilters > 0 && (
           <div className="mb-4 p-2 bg-muted/20 dark:bg-[#1c1c1d] rounded-md text-sm">
-            <span className="font-medium">{isCountLoading ? 'Calculating...' : `${filteredCount} gifts`}</span>
+            <span className="font-medium">{swrCountLoading ? 'Calculating...' : `${swrFilteredCount} gifts`}</span>
             <span className="text-muted-foreground dark:text-[#FFFFFF]/70"> match your selected filters</span>
           </div>
         )}
 
-        {isLoadingAttributes ? (
+        {swrAttrLoading ? (
           <div className="flex flex-col items-center justify-center py-8">
             <div className="relative w-12 h-12">
               <div className="absolute top-0 left-0 w-8 h-8 border-4 border-t-indigo-500 dark:border-t-indigo-400 border-transparent rounded-full animate-spin">
@@ -314,7 +286,7 @@ export function FilterDialog({ open, onOpenChange }: FilterDialogProps) {
               disabled={isApplying || Object.keys(selectedAttributes).length === 0}
               className="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md hover:from-purple-600 hover:to-indigo-600"
             >
-              Apply Filters {filteredCount !== null && !isCountLoading && `(${filteredCount} gifts)`}
+              Apply Filters {swrFilteredCount !== null && !swrCountLoading && `(${swrFilteredCount} gifts)`}
             </Button>
           </div>
         )}

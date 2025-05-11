@@ -55,10 +55,9 @@ export function ItemCard({ item }: ItemCardProps) {
     }
   }, [isClient])
 
-  // Helper function to format gift name for URL
-  const formatGiftName = (name: string): string => {
-    const itemNameParts = name.split('#')
-    return itemNameParts[0].trim().toLowerCase().replace(/\s+/g, '')
+  // Helper function to format collection name for URL
+  const formatCollectionName = (name: string): string => {
+    return name.trim().toLowerCase().replace(/\s+/g, '')
   }
 
   // Extract the ID number from the item name
@@ -70,10 +69,10 @@ export function ItemCard({ item }: ItemCardProps) {
     return String(item.id)
   }
 
-  // Generate Lottie URL
-  const giftName = formatGiftName(item.name)
+  // Use current collection name from state
+  const collectionName = state.collectionData?.giftName ? formatCollectionName(state.collectionData.giftName) : formatCollectionName(item.name)
   const itemNumber = extractItemNumber(item.name)
-  const lottieUrl = `https://nft.fragment.com/gift/${giftName}-${itemNumber}.lottie.json`
+  const lottieUrl = `https://nft.fragment.com/gift/${collectionName}-${itemNumber}.lottie.json`
 
   // Load content only when item is visible
   const loadContent = useCallback(() => {
@@ -84,26 +83,21 @@ export function ItemCard({ item }: ItemCardProps) {
     const loadImage = () => {
       if (containerRef.current) {
         const img = new Image()
-        // Always generate the URL from the name pattern - ignore item.image completely
-        const giftName = formatGiftName(item.name)
-        const itemNumber = extractItemNumber(item.name)
-        img.src = `https://nft.fragment.com/gift/${giftName}-${itemNumber}.webp`
+        img.src = `https://nft.fragment.com/gift/${collectionName}-${itemNumber}.webp`
         img.className = 'w-full h-full object-cover rounded-none transition-all duration-300'
         img.alt = item.name
         img.loading = 'lazy'
         img.style.display = 'block'
 
-        // Add load event to add a class when image is loaded
         img.onload = () => {
           img.classList.add('loaded')
           containerRef.current?.classList.add('image-loaded')
         }
 
-        // Add error handler to retry with different extension if webp fails
         img.onerror = () => {
-          img.src = `https://nft.fragment.com/gift/${giftName}-${itemNumber}.jpg`
+          img.src = `https://nft.fragment.com/gift/${collectionName}-${itemNumber}.jpg`
           img.onerror = () => {
-            img.src = `https://nft.fragment.com/gift/${giftName}-${itemNumber}.png`
+            img.src = `https://nft.fragment.com/gift/${collectionName}-${itemNumber}.png`
           }
         }
 
@@ -113,49 +107,44 @@ export function ItemCard({ item }: ItemCardProps) {
     }
 
     const loadLottie = async () => {
-      // First load the image as a fallback
       loadImage()
-
       if (containerRef.current && item.lottie && typeof window !== 'undefined') {
         try {
-          // Directly import lottie-web without dynamic import to fix loading issues
           import('lottie-web').then(module => {
             const lottie = module.default
-
-            // Clear container first
             if (containerRef.current) {
               containerRef.current.innerHTML = ''
-
-              lottieAnimRef.current = lottie.loadAnimation({
-                container: containerRef.current,
-                renderer: 'svg',
-                loop: true,
-                autoplay: true,
-                path: lottieUrl
-              })
-
-              // Add class to container for styling
-              containerRef.current.classList.add('lottie-loaded')
+              // Try to fetch the Lottie file first
+              fetch(lottieUrl)
+                .then(res => res.ok ? res.json() : null)
+                .then(data => {
+                  if (data && containerRef.current) {
+                    lottieAnimRef.current = lottie.loadAnimation({
+                      container: containerRef.current as Element,
+                      renderer: 'svg',
+                      loop: true,
+                      autoplay: true,
+                      animationData: data
+                    })
+                    containerRef.current.classList.add('lottie-loaded')
+                  } // else, fallback image is already shown
+                })
+                .catch(() => {/* fallback image is already shown */})
             }
           }).catch(error => {
             console.error('Error importing lottie-web:', error)
-            // The image has already been loaded as fallback
           })
         } catch (error) {
           console.error('Error loading lottie animation:', error)
-          // The image has already been loaded as fallback
         }
       }
     }
 
-    // Always load image first
     loadImage()
-
-    // If not in performance mode, try loading the Lottie animation from the generated URL
     if (!state.performanceMode) {
       loadLottie()
     }
-  }, [isVisible, isLoaded, item, state.performanceMode])
+  }, [isVisible, isLoaded, item, state.performanceMode, collectionName, itemNumber])
 
   // Cleanup lottie animation on unmount
   useEffect(() => {

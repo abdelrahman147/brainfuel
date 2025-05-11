@@ -7,29 +7,60 @@ import { Item } from '@/lib/db'
 import { ItemCard } from '@/components/item-card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
+import { useCollectionData } from '@/hooks/use-collection-data'
 
 // Memoize the ItemCard component to prevent unnecessary re-renders
 const MemoizedItemCard = memo(ItemCard);
 
 export function ItemsGrid() {
   const { state, dispatch } = useAppState()
-  const [isLoading, setIsLoading] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
   const [isFilterChange, setIsFilterChange] = useState(false)
   const prevFilters = useRef(state.filters)
   const prevSortOption = useRef(state.sortOption)
-  const abortControllerRef = useRef<AbortController | null>(null)
+
+  // Use SWR for collection data
+  const {
+    data: swrData,
+    error: swrError,
+    isLoading: swrLoading,
+    mutate: mutateCollectionData,
+  } = useCollectionData({
+    giftName: state.collectionData?.giftName || localStorage.getItem('lastGift') || undefined,
+    page: state.currentPage,
+    limit: state.itemsPerPage,
+    filters: state.filters,
+    sort: state.sortOption,
+    includeAttributes: true,
+    enabled: Boolean(state.collectionData?.giftName || localStorage.getItem('lastGift')),
+  })
+
+  // Update state when SWR data changes
+  useEffect(() => {
+    if (swrData) {
+      dispatch({ type: 'SET_COLLECTION_DATA', payload: swrData.collectionData })
+      if (Object.keys(swrData.attributes).length > 0) {
+        dispatch({ type: 'SET_ATTRIBUTES_WITH_PERCENTAGES', payload: swrData.attributes })
+      }
+      setIsInitialLoad(false)
+      setIsFilterChange(false)
+    }
+  }, [swrData, dispatch])
+
+  // Handle errors
+  useEffect(() => {
+    if (swrError) {
+      toast.error(`Failed to load items: ${swrError.message}`)
+    }
+  }, [swrError])
 
   // Detect changes in filters
   useEffect(() => {
-    // Only track filter changes after initial load
     if (!isInitialLoad) {
       const currentFiltersJson = JSON.stringify(state.filters)
       const prevFiltersJson = JSON.stringify(prevFilters.current)
-
       if (currentFiltersJson !== prevFiltersJson) {
         setIsFilterChange(true)
-        // Update the previous filters reference
         prevFilters.current = state.filters
       }
     }
@@ -37,195 +68,11 @@ export function ItemsGrid() {
 
   // Detect changes in sort option
   useEffect(() => {
-    // Only track sort option changes after initial load
     if (!isInitialLoad && state.sortOption !== prevSortOption.current) {
       setIsFilterChange(true)
       prevSortOption.current = state.sortOption
     }
   }, [state.sortOption, isInitialLoad])
-
-  // Memoize the loadItems function to prevent unnecessary re-renders
-  const loadItems = useCallback(async () => {
-    const giftName = localStorage.getItem('lastGift')
-    if (!giftName) return
-
-    const shouldRefresh =
-      !state.collectionData ||
-      state.collectionData.giftName !== giftName ||
-      isInitialLoad
-
-    if (shouldRefresh) {
-      // Cancel any existing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-
-      // Create a new abort controller for this request
-      abortControllerRef.current = new AbortController()
-
-      setIsLoading(true)
-      try {
-        const result = await getCollectionData(
-          giftName,
-          state.currentPage,
-          state.itemsPerPage,
-          state.filters,
-          state.sortOption,
-          true,
-          // Use the abort signal for this request
-          { signal: abortControllerRef.current.signal }
-        )
-
-        dispatch({
-          type: 'SET_COLLECTION_DATA',
-          payload: result.collectionData,
-        })
-
-        // If attributes are returned and there are no existing attributes, set them
-        if (Object.keys(result.attributes).length > 0 &&
-            Object.keys(state.attributesWithPercentages).length === 0) {
-          dispatch({
-            type: 'SET_ATTRIBUTES_WITH_PERCENTAGES',
-            payload: result.attributes,
-          })
-        }
-
-        setIsInitialLoad(false)
-        setIsFilterChange(false)
-      } catch (error) {
-        // Only show an error if it's not because of an aborted request
-        if ((error as Error).name !== 'AbortError') {
-          console.error(`Error loading items for ${giftName}:`, error)
-          toast.error(`Failed to load items: ${(error as Error).message}`)
-        }
-      } finally {
-        setIsLoading(false)
-        abortControllerRef.current = null
-      }
-    }
-  }, [dispatch, state.currentPage, state.filters, state.itemsPerPage, state.sortOption, isInitialLoad, state.collectionData, state.attributesWithPercentages])
-
-  // This effect handles the initial load and collection changes
-  useEffect(() => {
-    loadItems()
-
-    // Cleanup function to abort any pending requests when unmounting
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-    }
-  }, [loadItems])
-
-  // This effect handles filter changes
-  useEffect(() => {
-    const applyFilters = async () => {
-      if (!state.collectionData?.giftName || !isFilterChange) return
-
-      // Cancel any existing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-
-      // Create a new abort controller for this request
-      abortControllerRef.current = new AbortController()
-
-      setIsLoading(true)
-      try {
-        const result = await getCollectionData(
-          state.collectionData.giftName,
-          1, // Reset to first page when filters change
-          state.itemsPerPage,
-          state.filters,
-          state.sortOption,
-          false, // Don't need attributes on filter change
-          { signal: abortControllerRef.current.signal }
-        )
-
-        dispatch({
-          type: 'SET_COLLECTION_DATA',
-          payload: result.collectionData,
-        })
-
-        // Reset to page 1 when filters change
-        dispatch({ type: 'SET_CURRENT_PAGE', payload: 1 })
-        setIsFilterChange(false)
-      } catch (error) {
-        // Only show an error if it's not because of an aborted request
-        if ((error as Error).name !== 'AbortError') {
-          console.error('Error applying filters:', error)
-          toast.error(`Failed to apply filters: ${(error as Error).message}`)
-        }
-      } finally {
-        setIsLoading(false)
-        abortControllerRef.current = null
-      }
-    }
-
-    if (isFilterChange) {
-      applyFilters()
-    }
-
-    // Cleanup function to abort any pending requests
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-    }
-  }, [isFilterChange, state.collectionData?.giftName, state.filters, state.itemsPerPage, state.sortOption, dispatch])
-
-  // This effect handles page changes
-  useEffect(() => {
-    const handlePageChange = async () => {
-      if (!state.collectionData?.giftName || isInitialLoad || isFilterChange) return
-
-      // Cancel any existing request
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-
-      // Create a new abort controller for this request
-      abortControllerRef.current = new AbortController()
-
-      setIsLoading(true)
-      try {
-        const result = await getCollectionData(
-          state.collectionData.giftName,
-          state.currentPage,
-          state.itemsPerPage,
-          state.filters,
-          state.sortOption,
-          false, // Don't need attributes on page change
-          { signal: abortControllerRef.current.signal }
-        )
-
-        dispatch({
-          type: 'SET_COLLECTION_DATA',
-          payload: result.collectionData,
-        })
-      } catch (error) {
-        // Only show an error if it's not because of an aborted request
-        if ((error as Error).name !== 'AbortError') {
-          console.error(`Error loading page ${state.currentPage}:`, error)
-          toast.error(`Failed to load page: ${(error as Error).message}`)
-        }
-      } finally {
-        setIsLoading(false)
-        abortControllerRef.current = null
-      }
-    }
-
-    if (state.currentPage > 1) {
-      handlePageChange()
-    }
-
-    // Cleanup function to abort any pending requests
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-    }
-  }, [state.currentPage, dispatch, state.collectionData?.giftName, state.itemsPerPage, state.filters, state.sortOption, isInitialLoad, isFilterChange])
 
   // Building the loading skeleton
   const renderLoadingSkeleton = () => (
@@ -241,7 +88,7 @@ export function ItemsGrid() {
     </div>
   )
 
-  if (isLoading) {
+  if (swrLoading) {
     return renderLoadingSkeleton()
   }
 
@@ -259,9 +106,9 @@ export function ItemsGrid() {
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+    <div key={state.collectionData?.giftName || 'no-collection'} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
       {state.collectionData.items.map((item) => (
-        <MemoizedItemCard key={item.id} item={item} />
+        <MemoizedItemCard key={`${item.id}-${state.collectionData?.giftName || 'no-collection'}`} item={item} />
       ))}
     </div>
   )

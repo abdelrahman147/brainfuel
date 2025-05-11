@@ -5,15 +5,37 @@ import { useAppState } from '@/lib/state'
 import { getItems, getCollectionData } from '@/lib/api'
 import { toast } from 'sonner'
 import { useState, useRef } from 'react'
+import { useCollectionData } from '@/hooks/use-collection-data'
 
 export function Pagination() {
   const { state, dispatch } = useAppState()
   const [isLoading, setIsLoading] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
+  // Use SWR for collection data (must be before any return)
+  const { mutate: mutateCollectionData } = useCollectionData({
+    giftName: state.collectionData?.giftName,
+    page: state.currentPage,
+    limit: state.itemsPerPage,
+    filters: state.filters,
+    sort: state.sortOption,
+    includeAttributes: false,
+    enabled: Boolean(state.collectionData?.giftName),
+  })
+
   // If there are no items or only one page, don't show pagination
   if (!state.collectionData || state.collectionData.totalItems <= state.itemsPerPage) {
     return null
+  }
+
+  const handlePageChange = async (newPage: number) => {
+    dispatch({ type: 'SET_CURRENT_PAGE', payload: newPage })
+    try {
+      await mutateCollectionData()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    } catch (error) {
+      toast.error(`Failed to load page: ${(error as Error).message}`)
+    }
   }
 
   const handlePrevPage = async () => {
