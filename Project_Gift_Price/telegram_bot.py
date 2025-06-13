@@ -585,11 +585,12 @@ async def send_gift_card(update: Update, context: ContextTypes.DEFAULT_TYPE, gif
                 )
         else:
             # When sending a new message
-            sent_message = await update.message.reply_photo(
-                photo=open(card_path, 'rb'),
-                caption=f"🎁 {gift_name}",
-                reply_markup=reply_markup
-            )
+            with open(card_path, 'rb') as photo_file:
+                sent_message = await update.message.reply_photo(
+                    photo=photo_file,
+                    caption=f"🎁 {gift_name}",
+                    reply_markup=reply_markup
+                )
             
             # Register the message owner in the database for delete permission tracking
             try:

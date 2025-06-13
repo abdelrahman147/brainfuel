@@ -14,13 +14,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Catbox.moe API URL
-CATBOX_API_URL = "https://catbox.moe/user/api.php"
+# Import API configuration
+try:
+    from api_config import CATBOX_API_URL, IMAGE_CACHE_EXPIRY
+except ImportError:
+    # Fallback values if config is not available
+    CATBOX_API_URL = "https://catbox.moe/user/api.php"
+    IMAGE_CACHE_EXPIRY = 3600  # Cache expiry in seconds (1 hour)
 
 # In-memory cache to store uploaded image URLs and avoid duplicate uploads
 # Format: {gift_name: {"url": url, "timestamp": timestamp}}
 CACHE = {}
-CACHE_EXPIRY = 3600  # Cache expiry in seconds (1 hour)
 
 def upload_image_to_catbox(image_path: str) -> Optional[str]:
     """
@@ -80,7 +84,7 @@ def get_gift_card_url(gift_name: str) -> Optional[str]:
     if gift_name in CACHE:
         cache_entry = CACHE[gift_name]
         # Check if cache entry is still valid
-        if current_time - cache_entry["timestamp"] < CACHE_EXPIRY:
+        if current_time - cache_entry["timestamp"] < IMAGE_CACHE_EXPIRY:
             logger.info(f"Using cached URL for {gift_name}: {cache_entry['url']}")
             return cache_entry["url"]
     

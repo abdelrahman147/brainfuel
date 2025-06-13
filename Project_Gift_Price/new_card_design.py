@@ -9,6 +9,9 @@ import json
 from urllib.parse import quote
 from difflib import get_close_matches
 import math
+import sys
+import time
+from colorthief import ColorThief
 
 # Get the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -24,9 +27,43 @@ ton_logo_path = os.path.join(assets_dir, "TON2.png")
 star_logo_path = os.path.join(assets_dir, "star.png")
 font_path = os.path.join(script_dir, "Typekiln - EloquiaDisplay-ExtraBold.otf")
 
-# API endpoints
-GIFTS_API = "https://nft-gifts-api.onrender.com/gifts"
-CHART_API = "https://nft-gifts-api.onrender.com/weekChart?name="
+# Import API configuration
+try:
+    from api_config import GIFTS_API, CHART_API, API_CACHE_EXPIRY
+except ImportError:
+    # Fallback values if config is not available
+    GIFTS_API = "https://nft-gifts-api.onrender.com/gifts"
+    CHART_API = "https://nft-gifts-api.onrender.com/gift-history/"
+    API_CACHE_EXPIRY = 300  # 5 minutes cache expiry
+
+# Cache for API responses
+API_CACHE = {
+    "gifts": {"data": None, "timestamp": 0},
+    "chart": {}  # Format: {"gift_name": {"data": [...], "timestamp": 1234567890}}
+}
+
+# Asset preloading for commonly used images
+ASSET_CACHE = {}
+def preload_assets():
+    """Preload commonly used assets to avoid repeated disk I/O"""
+    global ASSET_CACHE
+    assets_to_load = {
+        "background": os.path.join(script_dir, "assets", "templates", "background.png"),
+        "white_box": os.path.join(script_dir, "assets", "templates", "white_box.png"),
+        "ton_logo": os.path.join(script_dir, "assets", "icons", "ton_logo.png"),
+        "star_logo": os.path.join(script_dir, "assets", "icons", "star_logo.png")
+    }
+    
+    for name, path in assets_to_load.items():
+        try:
+            if os.path.exists(path):
+                ASSET_CACHE[name] = Image.open(path).convert("RGBA")
+                print(f"Preloaded asset: {name}")
+        except Exception as e:
+            print(f"Error preloading asset {name}: {e}")
+
+# Preload assets when module is imported
+preload_assets()
 
 # Create output directory if it doesn't exist
 os.makedirs(output_dir, exist_ok=True)
@@ -158,9 +195,21 @@ def apply_color_to_background(background_img, color):
 # Function to fetch gift price data
 def fetch_gift_data(gift_name):
     try:
+        # Check cache first
+        current_time = time.time()
+        if API_CACHE["gifts"]["data"] and current_time - API_CACHE["gifts"]["timestamp"] < API_CACHE_EXPIRY:
+            print("Using cached gift data")
+            for gift in API_CACHE["gifts"]["data"]:
+                if gift["name"] == gift_name:
+                    return gift
+        
+        # Cache miss or expired, fetch fresh data
         response = requests.get(GIFTS_API)
         if response.status_code == 200:
             data = response.json()
+            # Update cache
+            API_CACHE["gifts"] = {"data": data, "timestamp": current_time}
+            
             for gift in data:
                 if gift["name"] == gift_name:
                     return gift
@@ -172,6 +221,12 @@ def fetch_gift_data(gift_name):
 # Function to fetch chart data for a gift
 def fetch_chart_data(gift_name):
     try:
+        # Check cache first
+        current_time = time.time()
+        if gift_name in API_CACHE["chart"] and current_time - API_CACHE["chart"][gift_name]["timestamp"] < API_CACHE_EXPIRY:
+            print(f"Using cached chart data for {gift_name}")
+            return API_CACHE["chart"][gift_name]["data"]
+        
         # URL encode the gift name
         encoded_name = quote(gift_name)
         url = f"{CHART_API}{encoded_name}"
@@ -179,6 +234,9 @@ def fetch_chart_data(gift_name):
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
+            # Cache the result
+            API_CACHE["chart"][gift_name] = {"data": data, "timestamp": current_time}
+            
             # Get the last 24 data points (24 hours)
             if len(data) >= 24:
                 return data[-24:]
@@ -421,319 +479,239 @@ def generate_chart_image(width, height, chart_data, color=(46, 204, 113)):
         # Return an empty transparent image if there's an error
         return Image.new('RGBA', (width, height), (255, 255, 255, 0)), True, 0
 
-# Function to create a gift card
+# Helper function to get an asset from cache or load it if needed
+def get_asset(asset_name, path, convert_mode="RGBA"):
+    """Get an asset from cache or load it if needed"""
+    if asset_name in ASSET_CACHE:
+        # Return a copy to avoid modifying the cached version
+        return ASSET_CACHE[asset_name].copy()
+    
+    # Asset not in cache, load it
+    try:
+        img = Image.open(path).convert(convert_mode)
+        return img
+    except Exception as e:
+        print(f"Error loading asset {asset_name} from {path}: {e}")
+        return None
+
+# Optimized resize function that selects the best method based on size change
+def optimized_resize(img, size, upscale=False):
+    """Resize an image using the most appropriate method based on the resize operation"""
+    if not img:
+        return None
+        
+    # Get current size
+    current_width, current_height = img.size
+    target_width, target_height = size
+    
+    # Calculate size ratio
+    width_ratio = target_width / current_width
+    height_ratio = target_height / current_height
+    
+    # Choose resize method based on operation
+    if upscale or width_ratio > 1 or height_ratio > 1:
+        # Upscaling - use LANCZOS for better quality
+        return img.resize(size, Image.LANCZOS)
+    else:
+        # Downscaling - use BOX for speed
+        return img.resize(size, Image.BOX)  # BOX is faster than BICUBIC
+
+# Replace the create_gift_card function with an optimized version
 def create_gift_card(gift_name, output_path=None):
     try:
-        # Check if files exist
-        if not os.path.exists(background_path):
-            print(f"Error: Background file not found at {background_path}")
-            return None
-            
-        if not os.path.exists(white_box_path):
-            print(f"Error: White box file not found at {white_box_path}")
-            return None
-            
-        if not os.path.exists(font_path):
-            print(f"Error: Font file not found at {font_path}")
-            return None
-            
-        # Load background and white box images
-        background_img = Image.open(background_path).convert("RGBA")
-        white_box_img = Image.open(white_box_path).convert("RGBA")
+        # Normalize gift name for file paths
+        if gift_name == "Jack-in-the-Box":
+            normalized_name = "Jack_in_the_Box"
+        elif gift_name == "Durov's Cap":
+            normalized_name = "Durovs_Cap"
+        else:
+            normalized_name = gift_name.replace(" ", "_").replace("-", "_").replace("'", "")
         
-        # Make sure both images are the same size (1600x1000)
-        target_size = (1600, 1000)
-        background_img = background_img.resize(target_size)
-        white_box_img = white_box_img.resize(target_size)
+        # Define paths
+        gift_img_path = os.path.join(script_dir, "downloaded_images", f"{normalized_name}.png")
+        background_path = os.path.join(script_dir, "assets", "templates", "background.png")
+        white_box_path = os.path.join(script_dir, "assets", "templates", "white_box.png")
+        ton_logo_path = os.path.join(script_dir, "assets", "icons", "ton_logo.png")
+        star_logo_path = os.path.join(script_dir, "assets", "icons", "star_logo.png")
         
-        # Find the gift image file
-        normalized_name = gift_name.replace(" ", "_")
-        gift_img_path = os.path.join(input_dir, f"{normalized_name}.png")
+        # Get assets from cache or load them
+        background_img = get_asset("background", background_path)
+        white_box_img = get_asset("white_box", white_box_path)
         
-        if not os.path.exists(gift_img_path):
-            print(f"Error: Image file for {gift_name} not found at {gift_img_path}")
-            return None
+        # Set target size for the card
+        target_size = (1080, 1080)
+        
+        # Resize background and white box using optimized resize
+        background_img = optimized_resize(background_img, target_size)
+        white_box_img = optimized_resize(white_box_img, target_size)
         
         # Get dominant color from gift image
-        dominant_color = get_dominant_color(gift_img_path)
+        color = get_dominant_color(gift_img_path)
         
-        # Fetch real data for the gift
-        gift_data = fetch_gift_data(gift_name)
-        chart_data = fetch_chart_data(gift_name)
-        
-        # Check if we have a pre-generated background
-        safe_name = gift_name.replace(' ', '_').replace('-', '_').replace("'", '')
-        pregenerated_bg_path = os.path.join(backgrounds_dir, f"{safe_name}_background.png")
-        
+        # Find pregenerated background or create one
+        pregenerated_bg_path = os.path.join(script_dir, "pregenerated_backgrounds", f"{normalized_name}_bg.png")
         if os.path.exists(pregenerated_bg_path):
-            # Use the pre-generated background
             colored_background = Image.open(pregenerated_bg_path).convert("RGBA")
-            if colored_background.size != background_img.size:
-                colored_background = colored_background.resize(background_img.size)
+            colored_background = optimized_resize(colored_background, background_img.size)
         else:
-            # Apply color to the background (fallback)
-            colored_background = apply_color_to_background(background_img, dominant_color)
+            colored_background = apply_color_to_background(background_img, color)
         
-        # Create a new blank canvas with the same size
-        card = Image.new('RGBA', background_img.size, (0, 0, 0, 0))
+        # Create a new image for the card
+        card = Image.new("RGBA", target_size, (0, 0, 0, 0))
         
-        # Paste the colored background
-        card.paste(colored_background, (0, 0), colored_background if colored_background.mode == 'RGBA' else None)
+        # Paste colored background
+        card.paste(colored_background, (0, 0), colored_background)
         
-        # Create shadow for white box
-        shadow_offset = 5
-        shadow_blur = 10
-        shadow_opacity = 40
+        # Paste white box
+        card.paste(white_box_img, (0, 0), white_box_img)
         
-        # Create a shadow layer
-        shadow = Image.new('RGBA', background_img.size, (0, 0, 0, 0))
-        shadow_draw = ImageDraw.Draw(shadow)
-        
-        # Calculate center position for white box
-        box_width, box_height = white_box_img.size
-        x_center = (background_img.width - box_width) // 2
-        y_center = (background_img.height - box_height) // 2
-        
-        # Create a blurred black rectangle for the shadow
-        shadow_rect = (
-            x_center + shadow_offset, 
-            y_center + shadow_offset, 
-            x_center + box_width + shadow_offset, 
-            y_center + box_height + shadow_offset
-        )
-        shadow_draw.rectangle(shadow_rect, fill=(0, 0, 0, shadow_opacity))
-        
-        # Apply blur to the shadow
-        shadow = shadow.filter(ImageFilter.GaussianBlur(shadow_blur))
-        
-        # Ensure card is RGBA before alpha_composite
-        if card.mode != 'RGBA':
-            card = card.convert('RGBA')
-        if shadow.mode != 'RGBA':
-            shadow = shadow.convert('RGBA')
-            
-        # Composite the shadow onto the card
-        card = Image.alpha_composite(card, shadow)
-        
-        # Paste the white box on top at the center position
-        card.paste(white_box_img, (x_center, y_center), white_box_img if white_box_img.mode == 'RGBA' else None)
-        
-        # Open the gift image
+        # Open and resize gift image
         gift_img = Image.open(gift_img_path)
+        gift_img.thumbnail((150, 150), Image.LANCZOS)  # Use LANCZOS for better quality thumbnails
         
-        # Convert to RGBA if needed
-        if gift_img.mode != 'RGBA':
-            gift_img = gift_img.convert('RGBA')
-            
-        # Resize gift image to match reference (slightly larger)
-        gift_img.thumbnail((150, 150))  # Increased size for better visibility
+        # Calculate position to center the gift image
+        gift_x = (card.width - gift_img.width) // 2
+        gift_y = 200  # Position from top
         
-        # Position for the gift image - adjusting to be properly inside the white box
-        gift_x = x_center + 150  # Moved 5px to the right
-        gift_y = y_center + 130  # Better centered in the white box
-        
-        # Apply a subtle highlight effect to the gift image
-        enhancer = ImageEnhance.Brightness(gift_img)
-        gift_img = enhancer.enhance(1.05)  # Subtle brightness boost
-        
-        # Paste the gift image onto the card
+        # Paste gift image
         card.paste(gift_img, (gift_x, gift_y), gift_img)
         
-        # Prepare for drawing text
+        # Add gift name
         draw = ImageDraw.Draw(card)
         
-        # Draw gift name with independent positioning
-        name_font = ImageFont.truetype(font_path, 100)  # Increased from 70 to 100
-        name_color = (60, 60, 60)
-        # Position the name independently at a fixed position
-        name_x = x_center + 310  # Fixed position
-        name_y = y_center + 150 # Fixed position
-        draw.text((name_x, name_y), gift_name, fill=name_color, font=name_font)
+        # Use larger font for gift name
+        name_font_size = 60
+        name_font = ImageFont.truetype(bold_font_path, name_font_size)
         
-        # Get price from API data or generate random if not available
-        current_price_usd = 0
-        current_price_ton = 0
+        # Center the text
+        name_width = draw.textlength(gift_name, font=name_font)
+        name_x = (card.width - name_width) // 2
+        name_y = gift_y + gift_img.height + 30
         
-        if gift_data:
-            if "priceUsd" in gift_data:
-                current_price_usd = float(gift_data["priceUsd"])
-            if "priceTon" in gift_data:
-                current_price_ton = float(gift_data["priceTon"])
-        else:
-            current_price_usd = random.randint(5000, 50000)
-            current_price_ton = current_price_usd / 3.2  # Approximate TON price
+        # Draw gift name
+        draw.text((name_x, name_y), gift_name, font=name_font, fill=(0, 0, 0))
         
-        # Calculate price in Telegram Stars (1 Star = $0.016)
-        stars_price = int(current_price_usd / 0.016)
+        # Fetch gift data
+        gift_data = fetch_gift_data(gift_name)
         
-        # Format prices
-        if current_price_usd < 100:
-            # For small prices, show one decimal place
-            usd_formatted = f"{current_price_usd:.1f}".replace(".", ",").replace(",0", "")
-        else:
-            # For large prices, no decimals
-            usd_formatted = f"{int(current_price_usd):,}".replace(",", " ")
-
-        # Format TON price (always show one decimal for smaller values)
-        if current_price_ton < 100:
-            ton_formatted = f"{current_price_ton:.1f}".replace(".", ",").replace(",0", "")
-        else:
-            ton_formatted = f"{int(current_price_ton):,}".replace(",", " ")
-
-        stars_formatted = f"{stars_price:,}".replace(",", " ")
-        
-        # Calculate percentage change
-        change_pct = 0
-        if gift_data and "changePercentage" in gift_data:
-            change_pct = float(gift_data["changePercentage"])
-        elif chart_data and len(chart_data) >= 2:
-            start_price = float(chart_data[0]["priceUsd"])
-            end_price = float(chart_data[-1]["priceUsd"])
-            if start_price > 0:
-                change_pct = ((end_price - start_price) / start_price) * 100
-        
-        # Determine color based on percentage change
-        change_sign = "+" if change_pct >= 0 else ""
-        
-        # Create more vibrant colors for change percentage
-        if change_pct >= 0:
-            change_color = (46, 204, 113)  # Vibrant green
-        else:
-            change_color = (231, 76, 60)  # Vibrant red
-        
-        # Draw percentage change at fixed position independent of gift image
-        pct_font = ImageFont.truetype(font_path, 70)
-        pct_text = f"{change_sign}{int(change_pct)}%"
-        pct_width = draw.textlength(pct_text, font=pct_font)
-        # Fixed position at top right of white box
-        pct_x = x_center + box_width - pct_width - 140
-        pct_y = y_center + 155  # Moved down by 5px from 150
-        draw.text((pct_x, pct_y), pct_text, fill=change_color, font=pct_font)
-        
-        # Draw dollar sign and USD price at exact position from reference
-        price_font = ImageFont.truetype(font_path, 140)
-        dollar_color = dominant_color  # Use the gift's dominant color for the dollar sign
-        price_color = (20, 20, 20)
-        
-        # Position for the dollar sign - matching reference
-        dollar_x = x_center + 180
-        dollar_y = y_center + 280  # Moved down by 5px from 230
-        
-        # Draw dollar sign
-        draw.text((dollar_x, dollar_y), "$", fill=dollar_color, font=price_font)
-        
-        # Draw USD price
-        draw.text((dollar_x + 100, dollar_y), usd_formatted, fill=price_color, font=price_font)
-        
-        # Load and colorize TON logo
-        ton_logo = Image.open(ton_logo_path)
-        if ton_logo.mode != 'RGBA':
-            ton_logo = ton_logo.convert('RGBA')
-        
-        # Resize TON logo to match reference - making it larger
-        ton_logo.thumbnail((70, 70))  # Increased from 50x50
-        
-        # Colorize TON logo with gift's dominant color
-        ton_logo_colored = Image.new('RGBA', ton_logo.size, (0, 0, 0, 0))
-        for y in range(ton_logo.height):
-            for x in range(ton_logo.width):
-                r, g, b, a = ton_logo.getpixel((x, y))
-                if a > 0:  # If not fully transparent
-                    # Replace black with the dominant color, keeping alpha
-                    ton_logo_colored.putpixel((x, y), dominant_color + (a,))
-        
-        # Load and colorize Star logo
-        star_logo = Image.open(star_logo_path)
-        if star_logo.mode != 'RGBA':
-            star_logo = star_logo.convert('RGBA')
-        
-        # Resize Star logo to match reference - making it larger
-        star_logo.thumbnail((70, 70))  # Increased from 50x50
-        
-        # Colorize Star logo with gift's dominant color
-        star_logo_colored = Image.new('RGBA', star_logo.size, (0, 0, 0, 0))
-        for y in range(star_logo.height):
-            for x in range(star_logo.width):
-                r, g, b, a = star_logo.getpixel((x, y))
-                if a > 0:  # If not fully transparent
-                    # Replace black with the dominant color, keeping alpha
-                    star_logo_colored.putpixel((x, y), dominant_color + (a,))
-        
-        # Position and draw TON, Star logos and prices at exact positions from reference
-        ton_y = y_center + 480  # Moved up by 5px from 500
-        
-        # Increase font size for currency values
-        ton_price_font = ImageFont.truetype(font_path, 50)  # Increased from 60
-        
-        # TON logo and price - vertically center the value with logo
-        # Calculate logo center point
-        ton_logo_center_y = (ton_y - 15) + (ton_logo.height // 2)
-        # Move text up more to properly center with logo
-        text_center_offset = ton_price_font.size // 2  # Increased offset to move text up
-        
-        # Position text to align with the center of the logo
-        ton_text_y = ton_logo_center_y - text_center_offset
-        
-        card.paste(ton_logo_colored, (dollar_x, ton_y - 15), ton_logo_colored)
-        
-        # Get the width of the TON value text for centering
-        ton_text_width = draw.textlength(ton_formatted, font=ton_price_font)
-        
-        # Position TON value closer to the logo and vertically centered
-        ton_text_x = dollar_x + 80  # Reduced separation
-        draw.text((ton_text_x, ton_text_y), ton_formatted, fill=price_color, font=ton_price_font)
-        
-        # Dot separator - matching reference but moved up
-        dot_y = ton_logo_center_y  # Center the dot vertically
-        # Calculate position for dot to be centered between TON and Star values
-        dot_x = int(ton_text_x + ton_text_width + 30)  # Reduced spacing from 60 to 30
-        draw.ellipse((dot_x - 7, dot_y - 7, dot_x + 8, dot_y + 8), fill=(100, 100, 100))
-        
-        # Star logo and price - vertically center the value with logo
-        star_x = int(dot_x + 20)  # Reduced spacing after dot (was 40)
-        card.paste(star_logo_colored, (star_x, ton_y - 15), star_logo_colored)
-        
-        # Position Star value closer to the logo and vertically centered
-        star_text_x = star_x + 80  # Reduced separation
-        draw.text((star_text_x, ton_text_y), stars_formatted, fill=price_color, font=ton_price_font)
-        
-        # Dimensions and positioning for the chart - matching reference exactly
-        chart_width = 1300
-        chart_height = 240
-        
-        # Generate chart from real data
-        chart_img, price_increased, price_change = generate_chart_image(chart_width, chart_height, chart_data, color=change_color)
-        
-        # Position the chart at the bottom of the white box - moved down
-        chart_x = x_center + 150
-        chart_y = y_center + 590  # Moved down by additional 20px
-        
-        # Paste the chart
-        card.paste(chart_img, (chart_x, chart_y), chart_img)
-        
-        # Add timestamp under the chart
-        current_time = datetime.datetime.now().strftime("%d %b %Y • %H:%M UTC")
-        timestamp_font = ImageFont.truetype(font_path, 24)
-        timestamp_color = (120, 120, 120)
-        
-        # Calculate text width for centering
-        timestamp_width = draw.textlength(current_time, font=timestamp_font)
-        timestamp_x = chart_x + (chart_width - timestamp_width) // 2
-        timestamp_y = chart_y + chart_height + 15  # Position below the chart
-        
-        # Draw the timestamp
-        draw.text((timestamp_x, timestamp_y), current_time, fill=timestamp_color, font=timestamp_font)
-        
-        # Save the card if output path is provided
-        if output_path:
-            # Create directory if it doesn't exist
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            card.save(output_path)
+        # Add price information if available
+        if gift_data and "priceUsd" in gift_data and "priceTon" in gift_data:
+            price_usd = float(gift_data["priceUsd"])
+            price_ton = float(gift_data["priceTon"])
             
-        return card
-    
+            # Format prices
+            price_usd_str = f"${price_usd:.2f}"
+            price_ton_str = f"{price_ton:.2f} TON"
+            
+            # Use medium font for prices
+            price_font_size = 40
+            price_font = ImageFont.truetype(font_path, price_font_size)
+            
+            # Center USD price
+            usd_width = draw.textlength(price_usd_str, font=price_font)
+            usd_x = (card.width - usd_width) // 2
+            usd_y = name_y + name_font_size + 30
+            
+            # Draw USD price
+            draw.text((usd_x, usd_y), price_usd_str, font=price_font, fill=(0, 0, 0))
+            
+            # Center TON price
+            ton_width = draw.textlength(price_ton_str, font=price_font)
+            ton_x = (card.width - ton_width) // 2
+            ton_y = usd_y + price_font_size + 10
+            
+            # Draw TON price
+            draw.text((ton_x, ton_y), price_ton_str, font=price_font, fill=(0, 0, 0))
+            
+            # Get TON logo from cache or load it
+            ton_logo = get_asset("ton_logo", ton_logo_path)
+            ton_logo.thumbnail((70, 70), Image.LANCZOS)
+            
+            # Position TON logo to the left of the TON price
+            ton_logo_x = ton_x - ton_logo.width - 10
+            ton_logo_y = ton_y - 10
+            
+            # Paste TON logo
+            card.paste(ton_logo, (ton_logo_x, ton_logo_y), ton_logo)
+            
+            # Add price change percentage if available
+            if "changePercentage" in gift_data:
+                change = float(gift_data["changePercentage"])
+                
+                # Format change percentage
+                if change >= 0:
+                    change_str = f"+{change:.2f}%"
+                    change_color = (46, 204, 113)  # Green for positive change
+                else:
+                    change_str = f"{change:.2f}%"
+                    change_color = (231, 76, 60)  # Red for negative change
+                
+                # Use smaller font for change percentage
+                change_font_size = 30
+                change_font = ImageFont.truetype(font_path, change_font_size)
+                
+                # Center change percentage
+                change_width = draw.textlength(change_str, font=change_font)
+                change_x = (card.width - change_width) // 2
+                change_y = ton_y + price_font_size + 20
+                
+                # Draw change percentage
+                draw.text((change_x, change_y), change_str, font=change_font, fill=change_color)
+                
+                # Get star logo from cache or load it
+                star_logo = get_asset("star_logo", star_logo_path)
+                star_logo.thumbnail((70, 70), Image.LANCZOS)
+                
+                # Position star logo to the left of the change percentage
+                star_logo_x = change_x - star_logo.width - 10
+                star_logo_y = change_y - 10
+                
+                # Paste star logo
+                card.paste(star_logo, (star_logo_x, star_logo_y), star_logo)
+            
+            # Fetch chart data
+            chart_data = fetch_chart_data(gift_name)
+            
+            # Generate and add chart
+            if chart_data:
+                chart_width = 800
+                chart_height = 250
+                chart_img = generate_chart_image(chart_width, chart_height, chart_data, color)
+                
+                # Position chart at the bottom
+                chart_x = (card.width - chart_width) // 2
+                chart_y = card.height - chart_height - 100
+                
+                # Paste chart
+                card.paste(chart_img, (chart_x, chart_y), chart_img)
+        
+        # Save metadata for future use
+        metadata_dir = os.path.join(script_dir, "card_metadata")
+        os.makedirs(metadata_dir, exist_ok=True)
+        
+        metadata = {
+            "gift_name": gift_name,
+            "normalized_name": normalized_name,
+            "color": color,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+        
+        with open(os.path.join(metadata_dir, f"{normalized_name}_metadata.json"), 'w') as f:
+            json.dump(metadata, f, indent=2)
+        
+        # Save the card
+        if output_path:
+            card.save(output_path, format="PNG")
+        else:
+            # Default output path
+            output_dir = os.path.join(script_dir, "new_gift_cards")
+            os.makedirs(output_dir, exist_ok=True)
+            output_path = os.path.join(output_dir, f"{normalized_name}_card.png")
+            card.save(output_path, format="PNG")
+        
+        return output_path
     except Exception as e:
-        print(f"Error creating card for {gift_name}: {e}")
+        print(f"Error creating gift card for {gift_name}: {e}")
         return None
 
 # Function to generate a specific gift card

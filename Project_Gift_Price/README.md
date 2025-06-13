@@ -9,6 +9,7 @@ A Telegram bot that displays price cards for Telegram gifts with real-time prici
 4. [Bot Commands](#bot-commands)
 5. [Technical Details](#technical-details)
 6. [Development](#development)
+7. [Recent Performance Improvements](#recent-performance-improvements)
 
 ## Project Architecture
 
@@ -171,4 +172,54 @@ This project is for educational purposes only. All Telegram gift images are owne
 Built with:
 - python-telegram-bot
 - Pillow for image processing
-- Catbox.moe for image hosting 
+- Catbox.moe for image hosting
+
+## Recent Performance Improvements
+
+The following critical performance and reliability improvements have been implemented:
+
+1. **API Response Caching**: Added caching for API responses to reduce network requests and improve response time
+   - Implemented in `new_card_design.py` with configurable expiry times
+   - Separate caches for gift data and chart data
+
+2. **Asset Preloading System**: Implemented preloading of commonly used images to reduce disk I/O
+   - Added `get_asset()` function to retrieve assets from cache or load them if needed
+   - Optimized resize operations based on the type of scaling required
+
+3. **Proper File Handle Management**: Fixed unclosed file handles in the Telegram bot
+   - Added proper context managers (`with` statements) for all file operations
+   - Prevents resource leaks during high-volume usage
+
+4. **Centralized API Configuration**: Created `api_config.py` to store all API endpoints and settings
+   - Makes it easier to update endpoints and timeouts
+   - Provides fallback values if the config file is not available
+
+5. **Parallel Processing for Card Generation**: Implemented multi-threaded card generation
+   - Uses ThreadPoolExecutor with optimal worker count based on CPU cores
+   - Significantly speeds up batch card generation
+
+These improvements make the bot faster, more reliable, and more resource-efficient without major code restructuring.
+
+## Features
+
+- Real-time pricing information for Telegram gifts
+- Beautiful price cards with charts and price history
+- Inline query support for easy sharing
+- Group chat integration
+- Rate limiting to prevent abuse
+
+## Setup
+
+Run the setup script to configure the bot:
+
+```bash
+./setup_and_run.sh
+```
+
+Follow the prompts to enter your Telegram bot token and username.
+
+## Usage
+
+- Send a gift name to the bot to get its price card
+- Use inline queries to share gift prices in any chat
+- Add the bot to group chats for easy access 
